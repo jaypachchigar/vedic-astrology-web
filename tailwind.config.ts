@@ -50,6 +50,19 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        gold: {
+          DEFAULT: "hsl(var(--gold))",
+          foreground: "hsl(var(--gold-foreground))",
+        },
+        purple: {
+          light: "hsl(var(--purple-light))",
+          dark: "hsl(var(--purple-dark))",
+          foreground: "hsl(var(--purple-foreground))",
+        },
+        saffron: {
+          light: "hsl(var(--saffron-light))",
+          dark: "hsl(var(--saffron-dark))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

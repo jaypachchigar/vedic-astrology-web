@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calculator, Calendar, Hash } from "lucide-react";
+import { calculateAllNumbers } from "@/lib/calculations/numerology";
 
 // Simple numerology calculation functions
 const calculateLifePathNumber = (dateOfBirth: string): number => {
@@ -78,14 +79,15 @@ export default function NumerologyPage() {
 
   const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
-    const lifePath = calculateLifePathNumber(formData.dateOfBirth);
-    const destiny = calculateDestinyNumber(formData.fullName);
+
+    // Use proper calculations from numerology library
+    const calculated = calculateAllNumbers(formData.fullName, formData.dateOfBirth);
 
     setResults({
-      lifePathNumber: lifePath,
-      destinyNumber: destiny,
-      soulUrgeNumber: Math.floor(Math.random() * 9) + 1, // Simplified for demo
-      personalityNumber: Math.floor(Math.random() * 9) + 1, // Simplified for demo
+      lifePathNumber: calculated.lifePath,
+      destinyNumber: calculated.expression,
+      soulUrgeNumber: calculated.soulUrge,
+      personalityNumber: calculated.personality,
     });
     setCalculated(true);
   };

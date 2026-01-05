@@ -233,13 +233,13 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Free Tier */}
-            <div className="bg-card p-8 rounded-xl border border-border">
+            <div className="bg-card p-8 rounded-xl border border-border flex flex-col h-full backdrop-blur-sm">
               <h3 className="text-lg font-semibold mb-2">Free</h3>
               <div className="mb-6">
                 <span className="text-4xl font-bold">$0</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-grow">
                 <li className="flex items-start text-sm">
                   <Check className="w-4 h-4 text-primary mr-2 mt-0.5" />
                   <span>Basic birth chart</span>
@@ -267,8 +267,8 @@ export default function Home() {
             </div>
 
             {/* Premium Tier */}
-            <div className="bg-card p-8 rounded-xl border-2 border-primary relative">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
+            <div className="bg-card p-8 rounded-xl border-2 border-primary relative flex flex-col h-full backdrop-blur-sm shadow-lg shadow-primary/20">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-gold to-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium shadow-md">
                 Most Popular
               </div>
               <h3 className="text-lg font-semibold mb-2">Premium</h3>
@@ -276,7 +276,7 @@ export default function Home() {
                 <span className="text-4xl font-bold">$9.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-grow">
                 <li className="flex items-start text-sm">
                   <Check className="w-4 h-4 text-primary mr-2 mt-0.5" />
                   <span>Complete astrology features</span>
@@ -312,14 +312,14 @@ export default function Home() {
             </div>
 
             {/* Annual Tier */}
-            <div className="bg-card p-8 rounded-xl border border-border">
+            <div className="bg-card p-8 rounded-xl border border-gold/30 flex flex-col h-full backdrop-blur-sm bg-gradient-to-br from-gold/5 to-purple-light/5">
               <h3 className="text-lg font-semibold mb-2">Annual</h3>
               <div className="mb-6">
                 <span className="text-4xl font-bold">$79.99</span>
                 <span className="text-muted-foreground">/year</span>
-                <div className="text-sm text-primary font-medium mt-1">Save 33%</div>
+                <div className="text-sm bg-gradient-to-r from-gold to-primary bg-clip-text text-transparent font-medium mt-1">Save 33%</div>
               </div>
-              <ul className="space-y-3 mb-8">
+              <ul className="space-y-3 mb-8 flex-grow">
                 <li className="flex items-start text-sm">
                   <Check className="w-4 h-4 text-primary mr-2 mt-0.5" />
                   <span>Everything in Premium</span>

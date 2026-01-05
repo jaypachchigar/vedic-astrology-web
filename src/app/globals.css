@@ -29,6 +29,15 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    /* Luxury color palette */
+    --gold: 45 93% 58%;
+    --gold-foreground: 240 10% 3.9%;
+    --purple-light: 270 60% 70%;
+    --purple-dark: 270 50% 40%;
+    --purple-foreground: 0 0% 100%;
+    --saffron-light: 27 87% 65%;
+    --saffron-dark: 27 87% 45%;
   }
 
   .dark {
@@ -56,6 +65,15 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    /* Luxury color palette - dark mode */
+    --gold: 45 93% 58%;
+    --gold-foreground: 240 10% 3.9%;
+    --purple-light: 270 60% 70%;
+    --purple-dark: 270 50% 40%;
+    --purple-foreground: 0 0% 98%;
+    --saffron-light: 27 87% 65%;
+    --saffron-dark: 27 87% 45%;
   }
 }
 

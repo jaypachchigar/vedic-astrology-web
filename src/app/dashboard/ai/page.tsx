@@ -111,7 +111,7 @@ export default function AIAssistantPage() {
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-[1fr_300px] gap-6 h-full">
+      <div className="grid md:grid-cols-[1fr_300px] gap-6 h-full">
         {/* Chat Area */}
         <Card className="flex flex-col h-full">
           <CardHeader>
@@ -204,7 +204,7 @@ export default function AIAssistantPage() {
         </Card>
 
         {/* Sidebar */}
-        <div className="space-y-4 hidden lg:block">
+        <div className="space-y-4 hidden md:block">
           {/* Suggested Questions */}
           <Card>
             <CardHeader>
