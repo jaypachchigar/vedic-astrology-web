@@ -46,3 +46,5 @@ prisma/migrations/
 
 # OS
 Thumbs.db
+.env.local
+.env
