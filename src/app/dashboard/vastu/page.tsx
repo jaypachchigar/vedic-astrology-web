@@ -162,7 +162,7 @@ export default function VastuPage() {
     return map[dir];
   };
 
-  const currentRecommendations = direction ? vastuRecommendations[direction] : null;
+  const currentRecommendations = direction ? vasturecommendations[direction] : null;
 
   return (
     <div className="space-y-6">
@@ -331,7 +331,7 @@ export default function VastuPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {currentRecommendations.colors.map((color) => (
+                  {currentRecommendations.colors.map((color: string) => (
                     <div key={color} className="flex items-center space-x-3 p-3 rounded-lg bg-muted">
                       <div
                         className="w-10 h-10 rounded-full border-2 border-border"
@@ -365,7 +365,7 @@ export default function VastuPage() {
             </CardHeader>
             <CardContent>
               <ul className="grid md:grid-cols-2 gap-3">
-                {currentRecommendations.goodFor.map((item) => (
+                {currentRecommendations.goodFor.map((item: string) => (
                   <li key={item} className="flex items-start space-x-2">
                     <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -385,7 +385,7 @@ export default function VastuPage() {
             </CardHeader>
             <CardContent>
               <ul className="grid md:grid-cols-2 gap-3">
-                {currentRecommendations.avoid.map((item) => (
+                {currentRecommendations.avoid.map((item: string) => (
                   <li key={item} className="flex items-start space-x-2">
                     <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <div className="w-2 h-2 rounded-full bg-red-500"></div>
@@ -408,7 +408,7 @@ export default function VastuPage() {
             </CardHeader>
             <CardContent>
               <ol className="space-y-3">
-                {currentRecommendations.remedies.map((remedy, index) => (
+                {currentRecommendations.remedies.map((remedy: string, index: number) => (
                   <li key={index} className="flex items-start space-x-3 p-4 rounded-lg bg-muted">
                     <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 text-sm font-semibold text-primary">
                       {index + 1}
