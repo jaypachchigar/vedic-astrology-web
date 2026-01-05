@@ -1,0 +1,130 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  phone             String?  @unique
+  passwordHash      String
+  fullName          String
+  avatarUrl         String?
+  subscriptionTier  String   @default("free") // free, premium, annual
+  subscriptionStatus String  @default("inactive") // active, inactive, canceled
+  subscriptionExpiresAt DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastLoginAt       DateTime?
+  isEmailVerified   Boolean  @default(false)
+
+  birthProfiles     BirthProfile[]
+  vastuProperties   VastuProperty[]
+  aiConversations   AIConversation[]
+  subscriptions     Subscription[]
+
+  @@map("users")
+}
+
+model BirthProfile {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileName     String
+  isPrimary       Boolean  @default(false)
+  dateOfBirth     DateTime
+  timeOfBirth     String   // Stored as HH:mm format
+  placeOfBirth    String
+  latitude        Float
+  longitude       Float
+  timezone        String
+  gender          String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  birthChart      BirthChart?
+
+  @@map("birth_profiles")
+}
+
+model BirthChart {
+  id                  String       @id @default(uuid())
+  birthProfileId      String       @unique
+  birthProfile        BirthProfile @relation(fields: [birthProfileId], references: [id], onDelete: Cascade)
+  chartData           Json         // Complete Kundali data
+  planetaryPositions  Json         // Positions of all planets
+  houseCusps          Json         // House divisions
+  aspects             Json?        // Planetary aspects
+  dashas              Json         // Dasha periods
+  calculatedAt        DateTime     @default(now())
+
+  @@map("birth_charts")
+}
+
+model VastuProperty {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyName    String
+  propertyType    String   // home, office, shop
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  rooms           VastuRoom[]
+
+  @@map("vastu_properties")
+}
+
+model VastuRoom {
+  id                  String        @id @default(uuid())
+  propertyId          String
+  property            VastuProperty @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomName            String
+  roomType            String        // bedroom, kitchen, livingroom, office, entrance
+  compassReading      Json?         // { north: number, accuracy: number, timestamp: Date }
+  layout              Json?         // { imageUrl: string, annotations: [] }
+  currentSetup        Json?         // Items and their positions
+  recommendations     Json?         // AI-generated recommendations
+  doshas              Json?         // Identified doshas
+  implementedChanges  Json?         // Track changes made
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  @@map("vastu_rooms")
+}
+
+model AIConversation {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId       String   @unique
+  birthProfileId  String?  // For context
+  messages        Json     // Array of messages
+  context         Json?    // User's astrological context
+  createdAt       DateTime @default(now())
+  lastMessageAt   DateTime @updatedAt
+
+  @@map("ai_conversations")
+}
+
+model Subscription {
+  id                    String   @id @default(uuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                String
+  status                String   // active, canceled, past_due, trialing
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean  @default(false)
+  stripeSubscriptionId  String?  @unique
+  stripeCustomerId      String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("subscriptions")
+}
