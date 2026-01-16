@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Calendar, TrendingUp, Sparkles, ArrowRight, Sun, Heart, Briefcase, DollarSign, Activity, Clock, Compass, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { getUserProfile } from "@/lib/supabase/birth-charts";
 import { getCompleteBirthChart, convertToAPIFormat } from "@/lib/astrology-api";
@@ -24,6 +25,7 @@ interface UserChartData {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [userName, setUserName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState<UserChartData>({});
@@ -36,7 +38,11 @@ export default function DashboardPage() {
   async function loadUserData() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        // Not authenticated - redirect to register page
+        router.push('/register');
+        return;
+      }
 
       // Get profile - try direct DB query first
       const { data: profile } = await supabase
@@ -184,7 +190,7 @@ export default function DashboardPage() {
                     </TabsTrigger>
                     <TabsTrigger value="yearly" className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4" />
-                      <span>Year {new Date().getFullYear()}</span>
+                      <span>Year 2026</span>
                     </TabsTrigger>
                     <TabsTrigger value="monthly" className="flex items-center space-x-2">
                       <TrendingUp className="w-4 h-4" />
@@ -207,7 +213,8 @@ export default function DashboardPage() {
                       moonSign={chartData.moonSign}
                       ascendant={chartData.ascendant}
                       mahaDasha={chartData.mahaDasha}
-                      year={new Date().getFullYear()}
+                      antarDasha={chartData.antarDasha}
+                      year={2026}
                     />
                   </TabsContent>
 
@@ -215,7 +222,7 @@ export default function DashboardPage() {
                     <MonthlyPredictions
                       moonSign={chartData.moonSign}
                       ascendant={chartData.ascendant}
-                      year={new Date().getFullYear()}
+                      year={2026}
                     />
                   </TabsContent>
                 </Tabs>

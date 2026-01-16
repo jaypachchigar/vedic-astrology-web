@@ -105,6 +105,7 @@ export default function VastuPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isCalibrating, setIsCalibrating] = useState(false);
+  const [calibrationError, setCalibrationError] = useState<string | null>(null);
 
   useEffect(() => {
     initializeCompass();
@@ -114,10 +115,13 @@ export default function VastuPage() {
   }, []);
 
   const initializeCompass = async () => {
+    console.log('🔧 Initializing compass...');
+
     // Check if compass is supported
     if (!compassService.isSupported()) {
-      console.log('Compass not supported on this device');
+      console.log('❌ Compass not supported on this device');
       setHasPermission(false);
+      setCalibrationError('Compass not supported on this device');
       return;
     }
 
@@ -125,30 +129,53 @@ export default function VastuPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
+        console.log('👤 User authenticated, loading profile...');
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('latitude, longitude')
           .eq('id', user.id)
-          .maybeSingle();
+          .maybeSingle() as { data: { latitude: number; longitude: number } | null; error: any };
 
-        if (profile && profile.latitude && profile.longitude) {
+        if (profileError) {
+          console.error('❌ Error loading profile:', profileError);
+          setCalibrationError('Could not load location from profile');
+        } else if (profile && profile.latitude && profile.longitude) {
+          console.log(`📍 Profile location found: (${profile.latitude}, ${profile.longitude})`);
           setIsCalibrating(true);
-          await compassService.setCalibration(profile.latitude, profile.longitude);
+          setCalibrationError(null);
+
+          try {
+            await compassService.setCalibration(profile.latitude, profile.longitude);
+            console.log('✅ Calibration complete');
+          } catch (calibError) {
+            console.error('❌ Calibration failed:', calibError);
+            setCalibrationError('Calibration failed - using magnetic north');
+          }
+
           setIsCalibrating(false);
+        } else {
+          console.warn('⚠️ No location data in profile');
+          setCalibrationError('Location not set in profile - please update your birth location');
         }
+      } else {
+        console.warn('⚠️ No authenticated user');
+        setCalibrationError('Please login to enable location-based calibration');
       }
     } catch (error) {
-      console.error('Error loading profile for compass calibration:', error);
-      // Continue without calibration
+      console.error('❌ Error during calibration:', error);
+      setCalibrationError('Calibration error - compass will show magnetic north');
+      setIsCalibrating(false);
     }
 
     // Check if permission is needed (iOS 13+)
     const needsPermission = typeof (DeviceOrientationEvent as any).requestPermission === 'function';
 
     if (needsPermission) {
+      console.log('📱 iOS device - permission required');
       setHasPermission(false);
     } else {
       // Android or older iOS - start compass directly
+      console.log('📱 Android/Desktop - starting compass directly');
       setHasPermission(true);
       startCompass();
     }
@@ -227,6 +254,22 @@ export default function VastuPage() {
                 <div className="flex items-center space-x-3">
                   <Target className="w-5 h-5 text-primary animate-pulse" />
                   <p className="text-sm">Calibrating compass for your location...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Calibration Error/Warning */}
+            {!isCalibrating && calibrationError && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 w-full max-w-md">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-orange-700 dark:text-orange-400">Calibration Notice</p>
+                    <p className="text-xs text-muted-foreground mt-1">{calibrationError}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Compass showing magnetic north. For true north, update your location in Profile settings.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

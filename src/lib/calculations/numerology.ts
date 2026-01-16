@@ -102,7 +102,7 @@ export function calculatePersonalYear(dateOfBirth: string): number {
   const date = new Date(dateOfBirth);
   const day = date.getDate();
   const month = date.getMonth() + 1;
-  const currentYear = new Date().getFullYear();
+  const currentYear = 2026; // Current year
 
   const sum = day + month + currentYear;
   return reduceToSingleDigit(sum);

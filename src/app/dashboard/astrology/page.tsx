@@ -223,7 +223,7 @@ export default function AstrologyPage() {
                 <div className="p-4 rounded-lg bg-muted">
                   <p className="text-sm text-muted-foreground mb-1">Antar Dasha</p>
                   <p className="font-medium">Saturn (Shani)</p>
-                  <p className="text-xs text-muted-foreground mt-1">2024 - 2026</p>
+                  <p className="text-xs text-muted-foreground mt-1">2024 - 2027</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted">
                   <p className="text-sm text-muted-foreground mb-1">Pratyantar Dasha</p>

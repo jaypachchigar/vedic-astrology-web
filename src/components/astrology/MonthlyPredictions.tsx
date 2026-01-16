@@ -227,8 +227,237 @@ export function MonthlyPredictions({ moonSign, ascendant, year = 2026 }: Monthly
   );
 }
 
+function generatePersonalizedMonthlyForecasts(moonSign: string, moonSignIndex: number, year: number): MonthForecast[] {
+  // Calculate house positions for key transits
+  const jupiterHouse1 = (2 - moonSignIndex + 12) % 12 || 12; // Taurus until May
+  const jupiterHouse2 = (3 - moonSignIndex + 12) % 12 || 12; // Gemini after May
+  const saturnHouse = (12 - moonSignIndex + 12) % 12 || 12; // Pisces all year
+
+  // Month-specific templates - adjust based on transits
+  const months: MonthForecast[] = [
+    {
+      month: 'January',
+      rating: 3,
+      theme: 'Foundation Building',
+      overview: `January ${year} brings steady energy for ${moonSign}. ${jupiterHouse1 <= 6 ? 'Jupiter\'s favorable position supports growth and expansion.' : 'Jupiter encourages patience and long-term planning.'} Focus on building strong foundations for the year ahead.`,
+      career: `${jupiterHouse1 === 10 || jupiterHouse1 === 6 ? 'Excellent month for career advancement. Recognition from superiors likely.' : jupiterHouse1 === 2 || jupiterHouse1 === 11 ? 'Financial negotiations and networking bring opportunities.' : 'Steady progress through consistent effort. Avoid impulsive career decisions.'}`,
+      finance: `${jupiterHouse1 === 2 || jupiterHouse1 === 11 ? 'Good income month. Consider starting new investments.' : jupiterHouse1 === 5 ? 'Creative projects may bring additional income.' : 'Maintain disciplined budgeting. Avoid unnecessary expenses.'}`,
+      relationships: `${jupiterHouse1 === 7 ? 'Excellent for partnerships. Singles may meet potential partners.' : jupiterHouse1 === 5 ? 'Romantic energy high. Good time for expressing feelings.' : 'Focus on clear communication. Family gatherings bring joy.'}`,
+      health: `${saturnHouse === 6 ? 'Health improves. Good time to start fitness routines.' : 'Monitor stress levels. Adequate rest important. Winter care needed for seasonal ailments.'}`,
+      opportunities: ['New Year resolutions supported by planetary energy', 'Makar Sankranti (Jan 14) auspicious for new beginnings', 'Winter spiritual practices strengthen foundation'],
+      challenges: ['Cold weather may affect health', 'Holiday season expenses require budgeting'],
+      remedies: ['Start morning meditation routine', 'Donate warm clothes on Sankranti', 'Set clear intentions for the year'],
+      luckyDates: ['3', '12', '14', '21', '30'],
+      luckyColors: ['White', 'Yellow', 'Orange'],
+      luckyNumbers: [1, 3, 9],
+      avoid: ['Impulsive decisions', 'Overspending']
+    },
+    {
+      month: 'February',
+      rating: 4,
+      theme: 'Spiritual Growth',
+      overview: `February brings spiritual depth for ${moonSign}. Maha Shivaratri (Feb 26) creates powerful transformation energy. ${jupiterHouse1 === 9 || jupiterHouse1 === 12 ? 'Your spiritual inclinations are strongly supported.' : 'Balance material pursuits with inner development.'}`,
+      career: `${jupiterHouse1 === 10 ? 'Career peaks. Promotions or recognition likely.' : jupiterHouse1 === 3 ? 'Communication skills advance career. Good for presentations.' : 'Steady progress. Networking brings future opportunities.'}`,
+      finance: `${jupiterHouse1 === 2 ? 'Excellent income month. Family support in finances.' : jupiterHouse1 === 11 ? 'Gains from investments. Elder siblings may help financially.' : 'Moderate income. Save for future expenses.'}`,
+      relationships: `${jupiterHouse1 === 7 ? 'Partnership harmony. Good month for commitments.' : jupiterHouse1 === 4 ? 'Family bonds strengthen. Quality time with mother.' : 'Friendships deepen. Social connections beneficial.'}`,
+      health: `${saturnHouse === 6 ? 'Excellent health month. Overcome chronic issues.' : 'Maintain immunity. Spiritual practices heal body and mind.'}`,
+      opportunities: ['Maha Shivaratri spiritual practices very powerful', 'Partnerships and collaborations favored', 'Creative projects show promise'],
+      challenges: ['Emotional sensitivity may create misunderstandings', 'Balance spiritual and material duties'],
+      remedies: ['Maha Shivaratri fasting and worship', 'Om Namah Shivaya chanting', 'Night vigil on Shivaratri brings blessings'],
+      luckyDates: ['3', '8', '12', '17', '21', '26'],
+      luckyColors: ['White', 'Light Blue', 'Silver'],
+      luckyNumbers: [2, 7, 9],
+      avoid: ['Negative thinking', 'Hasty relationship decisions']
+    },
+    {
+      month: 'March',
+      rating: 4,
+      theme: 'Celebration & Renewal',
+      overview: `March brings festive energy with Holi (Mar 25). Spring renewal supports fresh starts for ${moonSign}. ${jupiterHouse1 === 5 ? 'Creativity and joy flourish.' : 'Embrace change and new beginnings.'}`,
+      career: `${jupiterHouse1 === 10 || jupiterHouse1 === 6 ? 'Professional success. Hard work recognized.' : jupiterHouse1 === 3 ? 'Communication projects succeed. Media work favorable.' : 'Team collaborations bring results. Network actively.'}`,
+      finance: `${jupiterHouse1 === 2 || jupiterHouse1 === 11 ? 'Strong income month. Investments show returns.' : 'Festival expenses planned. Save for future goals.'}`,
+      relationships: `${jupiterHouse1 === 7 ? 'Romantic month. Singles attract partners. Married couples enjoy renewal.' : jupiterHouse1 === 5 ? 'Love and creativity combine. Express feelings freely.' : 'Social gatherings strengthen bonds. Forgive past hurts.'}`,
+      health: `Spring energy revitalizes. ${saturnHouse === 6 ? 'Excellent vitality. Start new fitness goals.' : 'Seasonal changes require immune support. Stay hydrated.'}`,
+      opportunities: ['Holi festival brings joy and healing', 'Spring projects and new beginnings', 'Travel opportunities arise'],
+      challenges: ['Festival indulgence may affect health', 'Over-commitment to social events'],
+      remedies: ['Holika Dahan ritual for releasing past karma', 'Play Holi with natural colors', 'Forgiveness meditation'],
+      luckyDates: ['3', '7', '12', '18', '21', '25', '30'],
+      luckyColors: ['Green', 'Pink', 'Yellow'],
+      luckyNumbers: [3, 6, 9],
+      avoid: ['Excessive celebration affecting responsibilities', 'Chemical colors']
+    },
+    {
+      month: 'April',
+      rating: 4,
+      theme: 'Dharmic Action',
+      overview: `April brings Ram Navami (Apr 10) and focus on righteous action for ${moonSign}. ${jupiterHouse1 === 9 ? 'Your dharmic path clarifies. Follow your principles.' : 'Align actions with values. Integrity brings success.'}`,
+      career: `${jupiterHouse1 === 10 ? 'Leadership opportunities. Take initiative.' : jupiterHouse1 === 6 ? 'Service excellence recognized. Help colleagues.' : 'Ethical approach to work brings long-term rewards.'}`,
+      finance: `${jupiterHouse1 === 2 ? 'Income increases. Family business favorable.' : jupiterHouse1 === 11 ? 'Gains from righteous work. Avoid shortcuts.' : 'Honest earnings blessed. Tax planning important.'}`,
+      relationships: `${jupiterHouse1 === 7 ? 'Relationships based on shared values thrive.' : jupiterHouse1 === 4 ? 'Family harmony through clear communication.' : 'Friendships with ethical people benefit you.'}`,
+      health: `${saturnHouse === 6 ? 'Health stable. Maintain discipline in diet and exercise.' : 'Summer heat begins. Stay hydrated and cool. Light foods beneficial.'}`,
+      opportunities: ['Ram Navami prayers bring courage and clarity', 'New financial year planning', 'Ethical business ventures succeed'],
+      challenges: ['Heat may cause fatigue', 'Balancing multiple responsibilities'],
+      remedies: ['Ram Navami fasting and prayers', 'Recite Ram Raksha Stotra', 'Service to poor in Lord Rama\'s name'],
+      luckyDates: ['3', '10', '12', '17', '21', '26'],
+      luckyColors: ['Yellow', 'Orange', 'Red'],
+      luckyNumbers: [1, 5, 9],
+      avoid: ['Unethical shortcuts', 'Excessive heat exposure']
+    },
+    {
+      month: 'May',
+      rating: 5,
+      theme: 'Major Transition',
+      overview: `May is transformative for ${moonSign} as Jupiter enters Gemini on May 1! ${jupiterHouse2 === 1 ? 'Your personal new year begins! Expansion in all areas of life.' : jupiterHouse2 === 10 ? 'Career boom starts! Major opportunities arise.' : jupiterHouse2 === 7 ? 'Partnership blessings begin! Marriage prospects excellent.' : 'New chapter opens. Embrace change with optimism.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Career breakthrough! Promotions, new jobs, or recognition.' : jupiterHouse2 === 6 ? 'Service work expands. Overcome obstacles easily.' : jupiterHouse2 === 3 ? 'Communication-based work flourishes. Media opportunities.' : 'Positive shift in professional life. New opportunities emerge.'}`,
+      finance: `${jupiterHouse2 === 2 ? 'Wealth expansion begins! Income increases significantly.' : jupiterHouse2 === 11 ? 'Gains multiply. Networking brings financial rewards.' : 'Financial improvement. New income sources develop.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Marriage prospects excellent! Partnerships blessed.' : jupiterHouse2 === 5 ? 'Romance blooms! Creative partnerships form.' : 'Relationships improve. Social circle expands positively.'}`,
+      health: `Buddha Purnima (May 23) brings healing energy. ${saturnHouse === 6 ? 'Health excellence continues.' : 'Vitality improves with Jupiter\'s shift. Start wellness programs.'}`,
+      opportunities: ['Jupiter transit brings 12-month blessing period', 'Buddha Purnima meditation powerful', 'New ventures launched now succeed'],
+      challenges: ['Too many opportunities may cause confusion', 'Avoid overextension'],
+      remedies: ['Jupiter prayers on May 1st', 'Buddha Purnima meditation', 'Donate to educational causes'],
+      luckyDates: ['1', '8', '12', '17', '23', '28'],
+      luckyColors: ['Yellow', 'Gold', 'White'],
+      luckyNumbers: [3, 5, 7],
+      avoid: ['Greed or over-expansion', 'Ignoring details']
+    },
+    {
+      month: 'June',
+      rating: 4,
+      theme: 'Growth & Expansion',
+      overview: `June continues Jupiter's blessings in Gemini for ${moonSign}. ${jupiterHouse2 === 10 ? 'Career soars. Make bold moves.' : jupiterHouse2 === 11 ? 'Gains multiply. Network actively.' : 'Growth in key life areas. Seize opportunities.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Peak career month. Leadership roles beckon.' : jupiterHouse2 === 6 ? 'Service brings recognition. Help others.' : jupiterHouse2 === 3 ? 'Writing, teaching, communication excel.' : 'Professional growth continues. Training beneficial.'}`,
+      finance: `${jupiterHouse2 === 2 ? 'Excellent earning month. Multiple income streams.' : jupiterHouse2 === 11 ? 'Investment returns excellent. Elder siblings help.' : 'Good financial month. Budget for summer expenses.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Partnership month! Commitments favored.' : jupiterHouse2 === 5 ? 'Romantic and creative. Children bring joy.' : 'Social life active. Meaningful connections form.'}`,
+      health: `${saturnHouse === 6 ? 'Health strong. Immunity excellent.' : 'Summer heat peaks. Stay cool and hydrated. Light exercise.'}`,
+      opportunities: ['Jupiter\'s full influence in new sign', 'Summer projects and collaborations', 'Travel opportunities'],
+      challenges: ['Heat-related stress', 'Overconfidence from success'],
+      remedies: ['Thursday Jupiter worship', 'Donate yellow items', 'Study sacred texts'],
+      luckyDates: ['3', '8', '12', '17', '21', '26'],
+      luckyColors: ['Yellow', 'Green', 'White'],
+      luckyNumbers: [3, 5, 8],
+      avoid: ['Overextension', 'Arrogance']
+    },
+    {
+      month: 'July',
+      rating: 4,
+      theme: 'Spiritual Wisdom',
+      overview: `July features Guru Purnima (Jul 20), honoring teachers and wisdom for ${moonSign}. ${jupiterHouse2 === 9 ? 'Your spiritual and philosophical pursuits are especially blessed.' : 'Seek guidance from elders and mentors.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Leadership recognized. Mentor others.' : jupiterHouse2 === 9 ? 'Teaching, publishing, international work excel.' : 'Learn from seniors. Professional courses beneficial.'}`,
+      finance: `${jupiterHouse2 === 2 || jupiterHouse2 === 11 ? 'Good income continues. Wise investments.' : 'Stable finances. Donate to educational causes for blessings.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Partnership wisdom deepens. Guru-shishya dynamic in relationships.' : jupiterHouse2 === 4 ? 'Learn from family elders. Ancestral wisdom valuable.' : 'Mentorship relationships beneficial.'}`,
+      health: `${saturnHouse === 6 ? 'Health excellent. Share wellness knowledge.' : 'Monsoon health care needed. Avoid infection. Boost immunity.'}`,
+      opportunities: ['Guru Purnima honoring teachers brings grace', 'Learning new skills', 'Spiritual retreats'],
+      challenges: ['Monsoon-related health issues', 'Humidity affecting mood'],
+      remedies: ['Guru Purnima puja to Jupiter', 'Honor teachers and parents', 'Study sacred texts'],
+      luckyDates: ['3', '8', '12', '17', '20', '26'],
+      luckyColors: ['Yellow', 'Saffron', 'White'],
+      luckyNumbers: [3, 7, 9],
+      avoid: ['Disrespect to elders', 'Ignoring guidance']
+    },
+    {
+      month: 'August',
+      rating: 3,
+      theme: 'Strategic Action',
+      overview: `August brings Janmashtami (Aug 27), celebrating Lord Krishna's wisdom for ${moonSign}. ${jupiterHouse2 === 3 ? 'Your communication and strategic thinking shine.' : 'Apply divine wisdom to practical challenges.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Strategic career moves pay off. Diplomacy wins.' : jupiterHouse2 === 6 ? 'Navigate workplace challenges skillfully.' : 'Political acumen helps navigate office dynamics.'}`,
+      finance: `${jupiterHouse2 === 2 ? 'Financial strategies succeed. Wise planning.' : jupiterHouse2 === 11 ? 'Network strategically for gains.' : 'Careful financial planning. Avoid impulsive decisions.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Diplomacy in partnerships. Clear communication.' : jupiterHouse2 === 5 ? 'Playful romance. Children teach wisdom.' : 'Friendship through shared interests.'}`,
+      health: `${saturnHouse === 6 ? 'Health stable. Preventive care works.' : 'Monsoon ailments possible. Stay dry and warm. Digestive care needed.'}`,
+      opportunities: ['Janmashtami prayers for strategic clarity', 'Problem-solving abilities peak', 'Diplomatic success'],
+      challenges: ['Workplace politics', 'Overthinking situations'],
+      remedies: ['Janmashtami fasting', 'Bhagavad Gita study', 'Krishna mantra'],
+      luckyDates: ['3', '8', '12', '17', '21', '27'],
+      luckyColors: ['Yellow', 'Blue', 'Green'],
+      luckyNumbers: [5, 8, 9],
+      avoid: ['Manipulation', 'Overly complex strategies']
+    },
+    {
+      month: 'September',
+      rating: 3,
+      theme: 'Preparation',
+      overview: `September is preparatory month for ${moonSign}. Upcoming Navratri energy builds. ${jupiterHouse2 === 6 ? 'Focus on health and service excellence.' : 'Prepare for festival season. Organize and plan.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Consolidate gains. Prepare next quarter strategy.' : jupiterHouse2 === 6 ? 'Service work continues steadily.' : 'Skill development for upcoming opportunities.'}`,
+      finance: `${jupiterHouse2 === 2 || jupiterHouse2 === 11 ? 'Plan festival expenses. Save wisely.' : 'Budget for festival season. Conservative approach.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Partnership planning. Future discussions.' : jupiterHouse2 === 4 ? 'Family planning for festivals.' : 'Social calendar organizing.'}`,
+      health: `${saturnHouse === 6 ? 'Excellent health. Prepare for Navratri fasting.' : 'Transition from monsoon to autumn. Seasonal care. Build immunity.'}`,
+      opportunities: ['Preparation brings success', 'Organizational skills shine', 'Planning for Q4 goals'],
+      challenges: ['Post-monsoon ailments', 'Transitional period uncertainty'],
+      remedies: ['Daily sadhana routine', 'Health check-ups', 'Prepare for Navratri'],
+      luckyDates: ['3', '8', '12', '17', '21', '26'],
+      luckyColors: ['Green', 'Brown', 'White'],
+      luckyNumbers: [3, 6, 9],
+      avoid: ['Procrastination', 'Ignoring health signals']
+    },
+    {
+      month: 'October',
+      rating: 5,
+      theme: 'Divine Power',
+      overview: `October brings Navratri (Oct 2-10) and Dussehra, powerful transformation time for ${moonSign}. ${jupiterHouse2 === 5 ? 'Creative and spiritual power peak together.' : 'Divine feminine energy supports all endeavors.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Victory in career challenges. Major breakthrough.' : jupiterHouse2 === 6 ? 'Overcome all obstacles. Enemies defeated.' : 'Professional challenges resolved. Success after struggle.'}`,
+      finance: `${jupiterHouse2 === 2 ? 'Excellent earnings. Lakshmi blessings.' : jupiterHouse2 === 11 ? 'Gains from multiple sources. Wealth increases.' : 'Financial improvement through divine grace.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Partnership power. United you conquer.' : jupiterHouse2 === 4 ? 'Family celebrations. Mother\'s blessings.' : 'Social triumph. Recognition in circles.'}`,
+      health: `${saturnHouse === 6 ? 'Excellent vitality through Navratri. Fasting purifies.' : 'Navratri fasting (if done) brings health benefits. Energy peaks.'}`,
+      opportunities: ['Navratri shakti sadhana most powerful', 'Victory over long-standing obstacles', 'New beginnings after Dussehra'],
+      challenges: ['Fasting may cause initial fatigue', 'Festival expenses'],
+      remedies: ['9-day Durga puja', 'Navratri fasting', 'Devi mantra chanting'],
+      luckyDates: ['2', '8', '10', '12', '17', '21', '26'],
+      luckyColors: ['Red', 'Yellow', 'All Nine Colors'],
+      luckyNumbers: [3, 6, 9],
+      avoid: ['Negative energy', 'Non-vegetarian food during Navratri']
+    },
+    {
+      month: 'November',
+      rating: 5,
+      theme: 'Prosperity & Light',
+      overview: `November brings Diwali (Nov 1), the festival of lights and prosperity for ${moonSign}. ${jupiterHouse2 === 2 || jupiterHouse2 === 11 ? 'Your wealth house is especially blessed!' : 'Lakshmi\'s blessings illuminate all areas.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Career peak! Major recognition and rewards.' : jupiterHouse2 === 11 ? 'Networking brings career leaps.' : 'Professional success and new opportunities.'}`,
+      finance: `${jupiterHouse2 === 2 ? 'Wealth multiplication! Diwali brings prosperity.' : jupiterHouse2 === 11 ? 'Maximum gains. Investments excel.' : 'Excellent financial month. Bonuses and rewards.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Partnership celebrations. Commitment blessings.' : jupiterHouse2 === 5 ? 'Romance sparkles. Children bring joy.' : 'Social celebrations. Meaningful connections.'}`,
+      health: `${saturnHouse === 6 ? 'Health excellent. Enjoy celebrations moderately.' : 'Good vitality. Balance indulgence with moderation.'}`,
+      opportunities: ['Diwali Lakshmi puja brings year-long prosperity', 'New ventures blessed', 'Property purchases auspicious'],
+      challenges: ['Festival indulgence affecting health', 'Overspending temptation'],
+      remedies: ['Diwali Lakshmi puja at midnight', 'Light 11+ diyas', 'Donate to poor'],
+      luckyDates: ['1', '3', '8', '12', '17', '21', '26'],
+      luckyColors: ['Red', 'Gold', 'Yellow'],
+      luckyNumbers: [1, 3, 8],
+      avoid: ['Gambling beyond tradition', 'Debt for celebrations']
+    },
+    {
+      month: 'December',
+      rating: 4,
+      theme: 'Completion & Gratitude',
+      overview: `December brings year-end reflection for ${moonSign}. Winter Solstice (Dec 21) marks spiritual renewal. ${jupiterHouse2 === 9 ? 'Your wisdom journey completes a cycle.' : 'Gratitude for year\'s blessings brings peace.'}`,
+      career: `${jupiterHouse2 === 10 ? 'Year-end recognition. Bonuses and appraisals.' : jupiterHouse2 === 11 ? 'Networking closes deals. Targets achieved.' : 'Complete pending projects. Plan next year strategy.'}`,
+      finance: `${jupiterHouse2 === 2 || jupiterHouse2 === 11 ? 'Excellent year-end finances. Tax planning.' : 'Financial review. Save year-end bonuses wisely.'}`,
+      relationships: `${jupiterHouse2 === 7 ? 'Partnership reflection. Renewal of commitment.' : jupiterHouse2 === 4 ? 'Family time. Year-end togetherness.' : 'Gratitude strengthens all relationships.'}`,
+      health: `${saturnHouse === 6 ? 'Health stable. Year-end check-ups beneficial.' : 'Winter care essential. Stay warm. Prevent seasonal ailments.'}`,
+      opportunities: ['Winter Solstice spiritual practices', 'Year-end planning brings clarity', 'Tax saving investments'],
+      challenges: ['Year-end stress and deadlines', 'Cold weather health issues'],
+      remedies: ['Gratitude meditation daily', 'Donation for blessings', 'New Year intentions on Solstice'],
+      luckyDates: ['3', '8', '12', '17', '21', '26', '31'],
+      luckyColors: ['White', 'Blue', 'Silver'],
+      luckyNumbers: [3, 6, 9],
+      avoid: ['Neglecting health in year-end rush', 'Unfinished business carrying to new year']
+    }
+  ];
+
+  return months;
+}
+
 function getMonthlyForecasts(moonSign: string, year: number): MonthForecast[] {
-  // Comprehensive month-by-month forecasts for Aries (template for all signs)
+  // Get moon sign index for transit calculations
+  const moonSignIndex = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'].indexOf(moonSign);
+
+  // If moon sign not found, default to Aries
+  if (moonSignIndex === -1) {
+    return getAriesMonthlyForecasts(year);
+  }
+
+  // Generate personalized forecasts based on moon sign
+  return generatePersonalizedMonthlyForecasts(moonSign, moonSignIndex, year);
+}
+
+function getAriesMonthlyForecasts(year: number): MonthForecast[] {
   const ariesForecasts: MonthForecast[] = [
     {
       month: 'January',

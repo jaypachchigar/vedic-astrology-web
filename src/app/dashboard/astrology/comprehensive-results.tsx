@@ -707,9 +707,9 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
                 <CardContent>
                   <div className="space-y-3">
                     {[
-                      { yogini: "Mangala", duration: "1 year", from: "2024", to: "2025", status: "Current" },
-                      { yogini: "Pingala", duration: "2 years", from: "2025", to: "2027", status: "Upcoming" },
-                      { yogini: "Dhanya", duration: "3 years", from: "2027", to: "2030", status: "Future" },
+                      { yogini: "Mangala", duration: "1 year", from: "2024", to: "2025", status: "Past" },
+                      { yogini: "Pingala", duration: "2 years", from: "2025", to: "2027", status: "Current" },
+                      { yogini: "Dhanya", duration: "3 years", from: "2027", to: "2030", status: "Upcoming" },
                       { yogini: "Bhramari", duration: "4 years", from: "2030", to: "2034", status: "Future" },
                       { yogini: "Bhadrika", duration: "5 years", from: "2034", to: "2039", status: "Future" },
                       { yogini: "Ulka", duration: "6 years", from: "2039", to: "2045", status: "Future" },
@@ -1064,7 +1064,8 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
               moonSign={planets.find((p: any) => p.name === 'Moon')?.sign?.name || ''}
               ascendant={kundli.ascendant?.sign?.name || ''}
               mahaDasha={advancedKundli?.vimshottari_dasha?.maha_dasha?.planet || ''}
-              year={new Date().getFullYear()}
+              antarDasha={advancedKundli?.vimshottari_dasha?.antar_dasha?.planet || ''}
+              year={2026}
             />
           )}
         </TabsContent>
@@ -1075,7 +1076,7 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
             <MonthlyPredictions
               moonSign={planets.find((p: any) => p.name === 'Moon')?.sign?.name || ''}
               ascendant={kundli.ascendant?.sign?.name || ''}
-              year={new Date().getFullYear()}
+              year={2026}
             />
           )}
         </TabsContent>

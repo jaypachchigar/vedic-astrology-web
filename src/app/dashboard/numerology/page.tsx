@@ -385,7 +385,7 @@ export default function NumerologyPage() {
         <Card className="border-primary/50">
           <CardHeader>
             <CardTitle>Your Personal Year Number</CardTitle>
-            <CardDescription>The energy theme for 2024</CardDescription>
+            <CardDescription>The energy theme for 2026</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-start space-x-4">
@@ -395,7 +395,7 @@ export default function NumerologyPage() {
               <div>
                 <h4 className="font-semibold mb-2">Year of New Beginnings</h4>
                 <p className="text-sm text-muted-foreground">
-                  2024 is a year of fresh starts and new opportunities. This is the perfect time to
+                  2026 is a year of fresh starts and new opportunities. This is the perfect time to
                   initiate new projects, start new relationships, or make significant life changes.
                   Your personal energy is aligned with manifestation and creation.
                 </p>

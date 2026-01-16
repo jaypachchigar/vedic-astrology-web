@@ -408,12 +408,12 @@ function getMockAdvancedKundli() {
       antar_dasha: {
         planet: 'Saturn',
         start: '2024-01-10',
-        end: '2026-07-18',
+        end: '2027-07-18',
       },
       pratyantar_dasha: {
         planet: 'Mercury',
-        start: '2024-12-15',
-        end: '2025-04-22',
+        start: '2025-12-15',
+        end: '2026-04-22',
       },
     },
     yogas: [

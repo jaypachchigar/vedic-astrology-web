@@ -33,6 +33,8 @@ class CompassService {
   private calibration: CompassCalibration | null = null;
   private smoothingBuffer: number[] = [];
   private readonly SMOOTHING_WINDOW = 3;
+  private lastLoggedHeading: number = -999;
+  private logCounter: number = 0;
 
   /**
    * Request permission for device sensors (iOS requirement)
@@ -78,6 +80,8 @@ class CompassService {
    * Set magnetic declination for location (converts magnetic to true north)
    */
   async setCalibration(latitude: number, longitude: number): Promise<void> {
+    console.log(`🧭 Starting calibration for coordinates: (${latitude}, ${longitude})`);
+
     // Calculate magnetic declination using World Magnetic Model
     const declination = await this.calculateMagneticDeclination(latitude, longitude);
 
@@ -87,37 +91,136 @@ class CompassService {
       longitude,
     };
 
-    console.log(`Compass calibrated for (${latitude}, ${longitude}) with declination: ${declination}°`);
+    console.log(`✅ Compass calibrated successfully!`);
+    console.log(`   Location: (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+    console.log(`   Magnetic Declination: ${declination.toFixed(2)}°`);
+    console.log(`   Direction: ${declination > 0 ? 'East' : declination < 0 ? 'West' : 'Zero'}`);
   }
 
   /**
    * Calculate magnetic declination for given coordinates
-   * Uses simplified approximation - for production, use geomag library or API
+   * Uses improved approximation based on WMM 2020-2025 data
+   * For production, consider using: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml
    */
   private async calculateMagneticDeclination(latitude: number, longitude: number): Promise<number> {
-    // Simplified declination calculation
-    // In production, use: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml
+    console.log(`📍 Calculating declination for: lat=${latitude}, lon=${longitude}`);
 
-    // Rough approximation based on location
     // Positive = East, Negative = West
 
-    // For India (approximate)
+    // INDIA - More detailed regional calculation
     if (latitude >= 8 && latitude <= 37 && longitude >= 68 && longitude <= 97) {
-      return 0.5; // India has very low declination (~0-1°E)
+      // India has low easterly declination that varies slightly by region
+      // North India: ~0.5°E, South India: ~1°E, East India: ~0.2°E
+      let declination = 0.5; // Default for central India
+
+      if (latitude < 20) {
+        // South India (higher declination)
+        declination = 0.8 + (longitude - 75) * 0.01;
+      } else if (longitude > 85) {
+        // East India (lower declination)
+        declination = 0.2 + (latitude - 20) * 0.01;
+      } else {
+        // North/Central India
+        declination = 0.5 + (latitude - 20) * 0.015;
+      }
+
+      console.log(`   Region: India, Declination: ${declination.toFixed(2)}°E`);
+      return declination;
     }
 
-    // For USA (approximate)
+    // USA - More accurate regional calculation
     if (latitude >= 25 && latitude <= 49 && longitude >= -125 && longitude <= -66) {
-      const avgLon = (longitude + 125) / 59;
-      return -15 + (avgLon * 20); // USA varies from -20°W to +5°E
+      // West Coast: -12° to -15°W
+      // Central: -5° to 0°
+      // East Coast: -10° to -15°W
+      let declination;
+
+      if (longitude < -110) {
+        // West Coast
+        declination = -12 - (latitude - 37) * 0.1;
+      } else if (longitude > -90) {
+        // East Coast
+        declination = -10 - (latitude - 38) * 0.15;
+      } else {
+        // Central US (varies significantly)
+        declination = -5 + (longitude + 100) * 0.3;
+      }
+
+      console.log(`   Region: USA, Declination: ${declination.toFixed(2)}°W`);
+      return declination;
     }
 
-    // For Europe (approximate)
+    // EUROPE - More detailed calculation
     if (latitude >= 36 && latitude <= 71 && longitude >= -10 && longitude <= 40) {
-      return 2; // Europe has slight easterly declination
+      // West Europe: 0° to -2°W
+      // Central Europe: 2° to 4°E
+      // East Europe: 5° to 8°E
+      let declination;
+
+      if (longitude < 5) {
+        // Western Europe (UK, France, Spain)
+        declination = -1 + longitude * 0.3;
+      } else if (longitude < 20) {
+        // Central Europe (Germany, Italy, Poland)
+        declination = 2 + (longitude - 10) * 0.15;
+      } else {
+        // Eastern Europe (Russia, Ukraine)
+        declination = 5 + (longitude - 20) * 0.1;
+      }
+
+      console.log(`   Region: Europe, Declination: ${declination.toFixed(2)}°`);
+      return declination;
     }
 
-    // Default to 0 if unknown
+    // EAST ASIA
+    if (latitude >= 20 && latitude <= 50 && longitude >= 100 && longitude <= 145) {
+      // China, Japan, Korea
+      let declination = -5 + (longitude - 115) * 0.2;
+      console.log(`   Region: East Asia, Declination: ${declination.toFixed(2)}°`);
+      return declination;
+    }
+
+    // SOUTHEAST ASIA
+    if (latitude >= -10 && latitude <= 20 && longitude >= 95 && longitude <= 120) {
+      // Thailand, Vietnam, Philippines, Indonesia
+      let declination = 0.5 - (latitude - 5) * 0.05;
+      console.log(`   Region: Southeast Asia, Declination: ${declination.toFixed(2)}°`);
+      return declination;
+    }
+
+    // AUSTRALIA
+    if (latitude >= -45 && latitude <= -10 && longitude >= 110 && longitude <= 155) {
+      // Australia has easterly declination that increases southward
+      let declination = 8 + (latitude + 25) * 0.2;
+      console.log(`   Region: Australia, Declination: ${declination.toFixed(2)}°E`);
+      return declination;
+    }
+
+    // MIDDLE EAST
+    if (latitude >= 15 && latitude <= 40 && longitude >= 35 && longitude <= 65) {
+      let declination = 2 + (longitude - 45) * 0.05;
+      console.log(`   Region: Middle East, Declination: ${declination.toFixed(2)}°E`);
+      return declination;
+    }
+
+    // AFRICA
+    if (latitude >= -35 && latitude <= 37 && longitude >= -20 && longitude <= 55) {
+      // Africa generally has small westerly to easterly declination
+      let declination = -2 + (longitude + 5) * 0.08;
+      console.log(`   Region: Africa, Declination: ${declination.toFixed(2)}°`);
+      return declination;
+    }
+
+    // SOUTH AMERICA
+    if (latitude >= -55 && latitude <= 15 && longitude >= -82 && longitude <= -35) {
+      // South America varies significantly
+      let declination = -10 + (longitude + 60) * 0.3;
+      console.log(`   Region: South America, Declination: ${declination.toFixed(2)}°`);
+      return declination;
+    }
+
+    // Default to 0 if unknown region
+    console.log(`   Region: Unknown, using default declination: 0°`);
     return 0;
   }
 
@@ -190,7 +293,6 @@ class CompassService {
     if (webkitHeading !== undefined && webkitHeading !== null) {
       // iOS provides direct compass heading (0-360, where 0 is north)
       magneticHeading = webkitHeading;
-      console.log('Using iOS webkitCompassHeading:', magneticHeading);
     } else if (alpha !== null) {
       // Android/other browsers use alpha
       // Alpha represents the rotation around the Z-axis (0-360)
@@ -201,10 +303,8 @@ class CompassService {
 
       // Normalize to 0-360
       magneticHeading = this.normalizeHeading(magneticHeading);
-
-      console.log('Using alpha:', magneticHeading);
     } else {
-      console.warn('No compass data available');
+      console.warn('⚠️ No compass data available');
       return;
     }
 
@@ -212,6 +312,22 @@ class CompassService {
     const trueHeading = this.calibration
       ? this.normalizeHeading(magneticHeading + this.calibration.declination)
       : magneticHeading;
+
+    // Log only periodically (every 30 readings) or when heading changes significantly (>10 degrees)
+    this.logCounter++;
+    const headingChange = Math.abs(magneticHeading - this.lastLoggedHeading);
+    const shouldLog = this.logCounter % 30 === 0 || headingChange > 10;
+
+    if (shouldLog) {
+      const deviceType = webkitHeading !== undefined ? 'iOS' : 'Android';
+      console.log(`📱 ${deviceType} reading: ${magneticHeading.toFixed(1)}°`);
+
+      if (this.calibration) {
+        console.log(`🧭 Declination: ${this.calibration.declination.toFixed(2)}° | Magnetic: ${magneticHeading.toFixed(1)}° → True: ${trueHeading.toFixed(1)}°`);
+      }
+
+      this.lastLoggedHeading = magneticHeading;
+    }
 
     // Apply smoothing
     const smoothedHeading = this.smoothHeading(trueHeading);
