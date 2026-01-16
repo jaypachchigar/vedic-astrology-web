@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calculator, Calendar, Hash } from "lucide-react";
+import { Calculator, Calendar, Hash, Star, Loader2 } from "lucide-react";
 import { calculateAllNumbers } from "@/lib/calculations/numerology";
+import { getUserProfile } from "@/lib/supabase/birth-charts";
 
 // Simple numerology calculation functions
 const calculateLifePathNumber = (dateOfBirth: string): number => {
@@ -65,6 +66,8 @@ const getNumberMeaning = (type: string, number: number) => {
 };
 
 export default function NumerologyPage() {
+  const [loading, setLoading] = useState(true);
+  const [hasProfileData, setHasProfileData] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -76,6 +79,42 @@ export default function NumerologyPage() {
     soulUrgeNumber: 0,
     personalityNumber: 0,
   });
+
+  // Load profile data on mount
+  useEffect(() => {
+    async function loadProfileData() {
+      try {
+        setLoading(true);
+        const profile = await getUserProfile();
+
+        if (profile && profile.full_name && profile.date_of_birth) {
+          setFormData({
+            fullName: profile.full_name,
+            dateOfBirth: profile.date_of_birth,
+          });
+          setHasProfileData(true);
+
+          // Auto-calculate with profile data
+          const allNumbers = calculateAllNumbers(profile.full_name, profile.date_of_birth);
+          setResults({
+            lifePathNumber: allNumbers.lifePath,
+            destinyNumber: allNumbers.expression,
+            soulUrgeNumber: allNumbers.soulUrge,
+            personalityNumber: allNumbers.personality,
+          });
+          setCalculated(true);
+        } else {
+          setHasProfileData(false);
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        setHasProfileData(false);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProfileData();
+  }, []);
 
   const handleCalculate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,15 +131,88 @@ export default function NumerologyPage() {
     setCalculated(true);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Loading your numerology profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show profile setup prompt if no complete profile data
+  if (!hasProfileData && !loading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6 px-4">
+        <Card className="border-primary/20">
+          <CardHeader className="text-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple to-gold mx-auto mb-4 flex items-center justify-center">
+              <Calculator className="w-8 h-8 text-white" />
+            </div>
+            <CardTitle className="text-2xl">Complete Your Profile for Numerology</CardTitle>
+            <CardDescription className="text-base mt-2">
+              Add your name and birth date to your profile to automatically calculate your numerology numbers
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="p-4 bg-muted rounded-lg space-y-3">
+              <p className="text-sm font-medium">What you'll get:</p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start">
+                  <span className="text-primary mr-2">✓</span>
+                  <span>Life Path Number - Your life's purpose and journey</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary mr-2">✓</span>
+                  <span>Destiny Number - Your soul's mission</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary mr-2">✓</span>
+                  <span>Soul Urge Number - Your inner desires</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary mr-2">✓</span>
+                  <span>Personality Number - How others see you</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="text-primary mr-2">✓</span>
+                  <span>All calculations updated automatically when you change your profile</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col space-y-3">
+              <Button
+                className="w-full bg-gradient-to-r from-purple to-gold"
+                size="lg"
+                onClick={() => window.location.href = '/dashboard/profile'}
+              >
+                Complete Profile
+                <Calculator className="w-4 h-4 ml-2" />
+              </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                Only your name and birth date are needed
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (calculated) {
     const lifePathMeaning = getNumberMeaning("lifePath", results.lifePathNumber);
     const destinyMeaning = getNumberMeaning("destiny", results.destinyNumber);
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-20 md:pb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Your Numerology Profile</h1>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-purple to-gold bg-clip-text text-transparent">
+              Your Numerology Profile
+            </h1>
             <p className="text-muted-foreground mt-2">
               Complete analysis for {formData.fullName}
             </p>
@@ -112,7 +224,7 @@ export default function NumerologyPage() {
 
         {/* Core Numbers */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-primary/50 bg-gradient-to-br from-primary/10 to-primary/5">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5">
             <CardHeader>
               <CardDescription>Life Path Number</CardDescription>
               <div className="text-5xl font-bold text-primary">{results.lifePathNumber}</div>
@@ -122,7 +234,7 @@ export default function NumerologyPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-purple/5">
             <CardHeader>
               <CardDescription>Destiny Number</CardDescription>
               <div className="text-5xl font-bold text-primary">{results.destinyNumber}</div>
@@ -132,7 +244,7 @@ export default function NumerologyPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-gold/5">
             <CardHeader>
               <CardDescription>Soul Urge Number</CardDescription>
               <div className="text-5xl font-bold text-primary">{results.soulUrgeNumber}</div>
@@ -142,7 +254,7 @@ export default function NumerologyPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
             <CardHeader>
               <CardDescription>Personality Number</CardDescription>
               <div className="text-5xl font-bold text-primary">{results.personalityNumber}</div>
@@ -154,7 +266,7 @@ export default function NumerologyPage() {
         </div>
 
         {/* Life Path Analysis */}
-        <Card>
+        <Card className="border-primary/20">
           <CardHeader>
             <CardTitle>Life Path Number {results.lifePathNumber}: {lifePathMeaning.title}</CardTitle>
             <CardDescription>Your life's purpose and journey</CardDescription>
@@ -193,7 +305,7 @@ export default function NumerologyPage() {
         </Card>
 
         {/* Destiny Number Analysis */}
-        <Card>
+        <Card className="border-primary/20">
           <CardHeader>
             <CardTitle>Destiny Number {results.destinyNumber}: {destinyMeaning.title}</CardTitle>
             <CardDescription>Your life's mission and what you're meant to achieve</CardDescription>
@@ -207,7 +319,7 @@ export default function NumerologyPage() {
 
         {/* Lucky Elements */}
         <div className="grid md:grid-cols-2 gap-6">
-          <Card>
+          <Card className="border-primary/20">
             <CardHeader>
               <CardTitle>Lucky Elements</CardTitle>
               <CardDescription>Numbers, colors, and dates aligned with your energy</CardDescription>
@@ -240,7 +352,7 @@ export default function NumerologyPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-primary/20">
             <CardHeader>
               <CardTitle>Compatibility</CardTitle>
               <CardDescription>Most compatible life path numbers</CardDescription>
@@ -296,15 +408,17 @@ export default function NumerologyPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 pb-20 md:pb-6">
       <div>
-        <h1 className="text-3xl font-bold">Numerology Calculator</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-purple to-gold bg-clip-text text-transparent">
+          Numerology Calculator
+        </h1>
         <p className="text-muted-foreground mt-2">
           Discover your life path, destiny, and personality numbers
         </p>
       </div>
 
-      <Card>
+      <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
         <CardHeader>
           <CardTitle>Calculate Your Numbers</CardTitle>
           <CardDescription>Enter your details for a complete numerology reading</CardDescription>

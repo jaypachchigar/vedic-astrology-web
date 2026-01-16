@@ -1,400 +1,312 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GlassCard, GlassCardContent, GlassCardHeader, GlassCardTitle, GlassCardDescription } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Mail, Phone, Calendar, MapPin, Lock, Bell, Sparkles } from "lucide-react";
+import { User, Calendar, MapPin, Clock, Save, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { getUserProfile, updateUserProfile, saveBirthChart } from "@/lib/supabase/birth-charts";
+import { LocationAutocomplete } from "@/components/astrology/LocationAutocomplete";
+import { getCompleteBirthChart, convertToAPIFormat } from "@/lib/astrology-api";
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState<"personal" | "birth" | "preferences" | "subscription" | "security" | "notifications">("personal");
-  const [formData, setFormData] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    phone: "+1 234 567 8900",
-    dateOfBirth: "1990-01-15",
-    timeOfBirth: "14:30",
-    placeOfBirth: "New York, USA",
-    latitude: "40.7128",
-    longitude: "-74.0060",
-    timezone: "America/New_York",
-    language: "English",
-    theme: "light",
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState({
+    full_name: "",
+    email: "",
+    date_of_birth: "",
+    time_of_birth: "",
+    place_of_birth: "",
+    city: "",
+    country: "",
+    latitude: 0,
+    longitude: 0,
+    timezone: "Asia/Kolkata",
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  async function loadProfile() {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const profileData = await getUserProfile();
+        if (profileData) {
+          setProfile({
+            full_name: profileData.full_name || "",
+            email: profileData.email || user.email || "",
+            date_of_birth: profileData.date_of_birth || "",
+            time_of_birth: profileData.time_of_birth || "",
+            place_of_birth: profileData.place_of_birth || "",
+            city: profileData.city || "",
+            country: profileData.country || "",
+            latitude: profileData.latitude || 0,
+            longitude: profileData.longitude || 0,
+            timezone: profileData.timezone || "Asia/Kolkata",
+          });
+        } else {
+          setProfile({ ...profile, email: user.email || "", timezone: "Asia/Kolkata" });
+        }
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+
+    // Validate coordinates
+    if (profile.place_of_birth && (!profile.latitude || !profile.longitude || profile.latitude === 0)) {
+      alert("Please select a valid location from the dropdown to get coordinates");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      console.log('📝 Step 1/3: Saving profile...');
+      await updateUserProfile(profile);
+      console.log('✅ Profile saved');
+
+      // If birth details are complete, auto-generate/update birth chart
+      if (profile.date_of_birth && profile.time_of_birth && profile.latitude && profile.longitude) {
+        console.log('📊 Step 2/3: Generating/updating birth chart...');
+        try {
+          const apiDetails = convertToAPIFormat({
+            dateOfBirth: profile.date_of_birth,
+            timeOfBirth: profile.time_of_birth,
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+            timezone: profile.timezone || 'Asia/Kolkata',
+          });
+
+          const chartData = await getCompleteBirthChart(apiDetails);
+          console.log('✅ Birth chart calculated');
+
+          console.log('💾 Step 3/3: Saving chart to database...');
+          await saveBirthChart({
+            name: profile.full_name || profile.email || 'User',
+            date_of_birth: profile.date_of_birth,
+            time_of_birth: profile.time_of_birth,
+            place_of_birth: profile.place_of_birth || '',
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+            timezone: profile.timezone || 'Asia/Kolkata',
+            chart_data: chartData,
+          });
+          console.log('✅ Birth chart saved/updated in database');
+          console.log('🎉 Profile and chart synchronized!');
+
+          alert("Profile saved and birth chart updated successfully!\n\nYour chart is now ready for:\n• AI Chat (personalized predictions)\n• Astrology (detailed analysis)\n• Numerology (automatic calculations)\n• All other features");
+        } catch (chartError) {
+          console.error('⚠️ Chart generation failed:', chartError);
+          alert("Profile saved, but chart generation failed. You can generate it from the Astrology page.");
+        }
+      } else {
+        alert("Profile saved successfully!\n\nAdd birth details (date, time, place) to unlock:\n• Personalized AI predictions\n• Complete birth chart\n• Numerology insights");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      alert("Failed to save profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const handleLocationSelect = (location: {
+    city: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+    timezone: string;
+    formatted: string;
+  }) => {
+    setProfile({
+      ...profile,
+      place_of_birth: location.formatted,
+      city: location.city,
+      country: location.country,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      timezone: location.timezone,
     });
   };
 
-  const handleSave = () => {
-    // Save profile logic here
-    alert("Profile updated successfully!");
-  };
-
-  const tabs = [
-    { id: "personal", label: "Personal Info", icon: User },
-    { id: "birth", label: "Birth Details", icon: Calendar },
-    { id: "preferences", label: "Preferences", icon: Sparkles },
-    { id: "subscription", label: "Subscription", icon: Sparkles },
-    { id: "security", label: "Security", icon: Lock },
-    { id: "notifications", label: "Notifications", icon: Bell },
-  ] as const;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20 md:pb-6">
       <div>
-        <h1 className="text-3xl font-bold">Profile Settings</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-purple to-gold bg-clip-text text-transparent">
+          Your Profile
+        </h1>
         <p className="text-muted-foreground mt-2">
-          Manage your account settings and preferences
+          Manage your personal information and birth details
         </p>
       </div>
 
-      {/* Profile Header */}
-      <GlassCard variant="gradient" className="p-6">
-        <div className="flex items-center space-x-4">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-gold flex items-center justify-center text-3xl font-bold text-white">
-            {formData.name.charAt(0)}
-          </div>
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold">{formData.name}</h2>
-            <p className="text-muted-foreground">{formData.email}</p>
-            <div className="mt-2">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gold/20 text-gold-foreground border border-gold/30">
-                Free Plan
-              </span>
+      <form onSubmit={handleSave} className="space-y-6">
+        {/* Personal Information */}
+        <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <User className="w-5 h-5" />
+              <span>Personal Information</span>
+            </CardTitle>
+            <CardDescription>Your basic profile details</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name">Full Name</Label>
+                <Input
+                  id="full_name"
+                  value={profile.full_name}
+                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profile.email}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
             </div>
-          </div>
-          <Button variant="outline">Change Photo</Button>
-        </div>
-      </GlassCard>
+          </CardContent>
+        </Card>
 
-      {/* Tabs */}
-      <div className="flex space-x-2 overflow-x-auto pb-2">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-md"
-                  : "bg-accent text-muted-foreground hover:bg-accent/80"
-              }`}
-            >
-              <Icon className="w-4 h-4" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
+        {/* Birth Details */}
+        <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-purple/5">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Calendar className="w-5 h-5" />
+              <span>Birth Details</span>
+            </CardTitle>
+            <CardDescription>
+              These details will be auto-filled when generating birth charts
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date_of_birth">Date of Birth</Label>
+                <Input
+                  id="date_of_birth"
+                  type="date"
+                  value={profile.date_of_birth}
+                  onChange={(e) => setProfile({ ...profile, date_of_birth: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time_of_birth">Time of Birth</Label>
+                <Input
+                  id="time_of_birth"
+                  type="time"
+                  value={profile.time_of_birth}
+                  onChange={(e) => setProfile({ ...profile, time_of_birth: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground">24-hour format</p>
+              </div>
+            </div>
 
-      {/* Tab Content */}
-      <div className="space-y-6">
-        {activeTab === "personal" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Update your personal details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="dateOfBirth"
-                      name="dateOfBirth"
-                      type="date"
-                      value={formData.dateOfBirth}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline">Cancel</Button>
-                <Button onClick={handleSave} className="bg-gradient-to-r from-primary to-gold">
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            <div className="space-y-2">
+              <Label htmlFor="place_of_birth">
+                <MapPin className="w-4 h-4 inline mr-1" />
+                Place of Birth
+              </Label>
+              <LocationAutocomplete
+                value={profile.place_of_birth}
+                onSelect={handleLocationSelect}
+                placeholder="Search for your birth city..."
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Start typing to search for your city. Coordinates will be set automatically.
+              </p>
+            </div>
 
-        {activeTab === "birth" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Birth Details</CardTitle>
-              <CardDescription>Your astrological birth information</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="timeOfBirth">Time of Birth</Label>
-                  <Input
-                    id="timeOfBirth"
-                    name="timeOfBirth"
-                    type="time"
-                    value={formData.timeOfBirth}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="placeOfBirth">Place of Birth</Label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="placeOfBirth"
-                      name="placeOfBirth"
-                      value={formData.placeOfBirth}
-                      onChange={handleInputChange}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="latitude">Latitude</Label>
-                  <Input
-                    id="latitude"
-                    name="latitude"
-                    value={formData.latitude}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="longitude">Longitude</Label>
-                  <Input
-                    id="longitude"
-                    name="longitude"
-                    value={formData.longitude}
-                    onChange={handleInputChange}
-                  />
-                </div>
-              </div>
-              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground">
-                  These details are used to calculate your accurate birth chart, numerology, and provide personalized predictions.
-                </p>
-              </div>
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline">Cancel</Button>
-                <Button onClick={handleSave} className="bg-gradient-to-r from-primary to-gold">
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "preferences" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Preferences</CardTitle>
-              <CardDescription>Customize your experience</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="timezone">Timezone</Label>
                 <Input
                   id="timezone"
-                  name="timezone"
-                  value={formData.timezone}
-                  onChange={handleInputChange}
+                  value={profile.timezone}
+                  readOnly
+                  disabled
+                  className="bg-muted text-muted-foreground"
                 />
+                <p className="text-xs text-muted-foreground">Auto-detected from location</p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="language">Language</Label>
+                <Label htmlFor="latitude">Latitude</Label>
                 <Input
-                  id="language"
-                  name="language"
-                  value={formData.language}
-                  onChange={handleInputChange}
+                  id="latitude"
+                  value={profile.latitude ? profile.latitude.toFixed(4) : ""}
+                  readOnly
+                  disabled
+                  className="bg-muted text-muted-foreground font-mono text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="theme">Theme</Label>
-                <select
-                  id="theme"
-                  name="theme"
-                  value={formData.theme}
-                  onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                  <option value="system">System</option>
-                </select>
+                <Label htmlFor="longitude">Longitude</Label>
+                <Input
+                  id="longitude"
+                  value={profile.longitude ? profile.longitude.toFixed(4) : ""}
+                  readOnly
+                  disabled
+                  className="bg-muted text-muted-foreground font-mono text-sm"
+                />
               </div>
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline">Cancel</Button>
-                <Button onClick={handleSave} className="bg-gradient-to-r from-primary to-gold">
-                  Save Changes
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
 
-        {activeTab === "subscription" && (
-          <GlassCard variant="gold">
-            <GlassCardHeader>
-              <GlassCardTitle>Subscription Plan</GlassCardTitle>
-              <GlassCardDescription>Manage your subscription</GlassCardDescription>
-            </GlassCardHeader>
-            <GlassCardContent className="space-y-4">
-              <div className="bg-gradient-to-br from-gold/20 to-purple-light/20 border border-gold/30 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-bold">Free Plan</h3>
-                    <p className="text-sm text-muted-foreground">Basic astrological features</p>
-                  </div>
-                  <div className="text-3xl font-bold">$0<span className="text-sm font-normal">/mo</span></div>
-                </div>
-                <ul className="space-y-2 mb-6">
-                  <li className="flex items-center text-sm">
-                    <Sparkles className="w-4 h-4 mr-2 text-gold" />
-                    Basic birth chart analysis
-                  </li>
-                  <li className="flex items-center text-sm">
-                    <Sparkles className="w-4 h-4 mr-2 text-gold" />
-                    Numerology calculations
-                  </li>
-                  <li className="flex items-center text-sm">
-                    <Sparkles className="w-4 h-4 mr-2 text-gold" />
-                    Limited AI consultations
-                  </li>
-                </ul>
-                <Button className="w-full bg-gradient-to-r from-gold to-primary">
-                  Upgrade to Premium
-                </Button>
-              </div>
-            </GlassCardContent>
-          </GlassCard>
-        )}
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground">
+                <strong>Note:</strong> Save your birth details here to avoid re-entering them every time. 
+                These will automatically populate when you generate a new birth chart.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
-        {activeTab === "security" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>Manage your account security</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium mb-2">Change Password</h3>
-                  <div className="space-y-2">
-                    <Input type="password" placeholder="Current password" />
-                    <Input type="password" placeholder="New password" />
-                    <Input type="password" placeholder="Confirm new password" />
-                  </div>
-                </div>
-                <Button>Update Password</Button>
-              </div>
-              <div className="border-t pt-4">
-                <h3 className="font-medium mb-2 text-destructive">Danger Zone</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Once you delete your account, there is no going back. Please be certain.
-                </p>
-                <Button variant="destructive">Delete Account</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === "notifications" && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Notification Preferences</CardTitle>
-              <CardDescription>Choose what updates you want to receive</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-muted-foreground">Receive updates via email</p>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-4 h-4" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Daily Horoscope</p>
-                    <p className="text-sm text-muted-foreground">Get daily astrological insights</p>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-4 h-4" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Transit Alerts</p>
-                    <p className="text-sm text-muted-foreground">Important planetary movements</p>
-                  </div>
-                  <input type="checkbox" className="w-4 h-4" />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Product Updates</p>
-                    <p className="text-sm text-muted-foreground">New features and improvements</p>
-                  </div>
-                  <input type="checkbox" className="w-4 h-4" />
-                </div>
-              </div>
-              <div className="flex justify-end pt-4">
-                <Button onClick={handleSave} className="bg-gradient-to-r from-primary to-gold">
-                  Save Preferences
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+        {/* Save Button */}
+        <div className="flex justify-end">
+          <Button type="submit" disabled={saving} size="lg">
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {profile.date_of_birth && profile.time_of_birth && profile.latitude
+                  ? "Updating chart..."
+                  : "Saving..."}
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Profile
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

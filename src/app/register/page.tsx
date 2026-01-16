@@ -2,170 +2,433 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard, GlassCardContent, GlassCardDescription, GlassCardFooter, GlassCardHeader, GlassCardTitle } from "@/components/ui/glass-card";
 import { VedicLogo } from "@/components/brand/VedicLogo";
-import { registerSchema } from "@/lib/validation";
-import { z } from "zod";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ArrowRight, Loader2, User, Mail, Lock, Calendar, Clock, MapPin } from "lucide-react";
+import { supabase } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { LocationAutocomplete } from "@/components/astrology/LocationAutocomplete";
+import { updateUserProfile, saveBirthChart } from "@/lib/supabase/birth-charts";
+import { getCompleteBirthChart, convertToAPIFormat } from "@/lib/astrology-api";
 
-type RegisterFormData = z.infer<typeof registerSchema>;
-
-export default function RegisterPage() {
+export default function SimpleRegisterPage() {
+  const router = useRouter();
+  const [step, setStep] = useState<1 | 2>(1);
   const [isLoading, setIsLoading] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+  const [error, setError] = useState<string | null>(null);
+
+  // Step 1: Account details
+  const [accountData, setAccountData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
-  const onSubmit = async (data: RegisterFormData) => {
+  // Step 2: Birth details
+  const [birthData, setBirthData] = useState({
+    date_of_birth: "",
+    time_of_birth: "",
+    place_of_birth: "",
+    city: "",
+    country: "",
+    latitude: 0,
+    longitude: 0,
+    timezone: "Asia/Kolkata",
+  });
+
+  const handleLocationSelect = (location: {
+    city: string;
+    country: string;
+    latitude: number;
+    longitude: number;
+    timezone: string;
+    formatted: string;
+  }) => {
+    setBirthData({
+      ...birthData,
+      place_of_birth: location.formatted,
+      city: location.city,
+      country: location.country,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      timezone: location.timezone,
+    });
+  };
+
+  const handleStep1Submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // Validation
+    if (!accountData.name.trim()) {
+      setError("Please enter your name");
+      return;
+    }
+
+    if (!accountData.email.trim()) {
+      setError("Please enter your email");
+      return;
+    }
+
+    if (accountData.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    if (accountData.password !== accountData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    // Move to step 2
+    setStep(2);
+  };
+
+  const handleFinalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    // Validate birth details
+    if (!birthData.date_of_birth) {
+      setError("Please enter your date of birth");
+      return;
+    }
+
+    if (!birthData.time_of_birth) {
+      setError("Please enter your time of birth");
+      return;
+    }
+
+    if (!birthData.place_of_birth || !birthData.latitude || birthData.latitude === 0) {
+      setError("Please select a valid location from the dropdown");
+      return;
+    }
+
     setIsLoading(true);
 
-    // TODO: Implement actual registration
-    console.log("Registration data:", data);
-    setTimeout(() => {
+    try {
+      console.log('🚀 Starting simplified registration...');
+
+      // Step 1: Create account
+      console.log('📝 Creating account...');
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: accountData.email,
+        password: accountData.password,
+        options: {
+          data: {
+            full_name: accountData.name,
+          },
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+
+      if (authError) {
+        setError(authError.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (!authData.user) {
+        setError("Registration failed. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if email already exists
+      if (authData.user.identities && authData.user.identities.length === 0) {
+        setError("This email is already registered. Please sign in instead.");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('✅ Account created:', authData.user.email);
+
+      // Step 2: Save birth profile
+      console.log('📊 Saving birth profile...');
+      await updateUserProfile(birthData);
+      console.log('✅ Profile saved');
+
+      // Step 3: Generate birth chart
+      console.log('🌟 Generating birth chart...');
+      try {
+        const apiDetails = convertToAPIFormat({
+          dateOfBirth: birthData.date_of_birth,
+          timeOfBirth: birthData.time_of_birth,
+          latitude: birthData.latitude,
+          longitude: birthData.longitude,
+          timezone: birthData.timezone,
+        });
+
+        const chartData = await getCompleteBirthChart(apiDetails);
+        console.log('✅ Birth chart calculated');
+
+        await saveBirthChart({
+          name: accountData.name,
+          date_of_birth: birthData.date_of_birth,
+          time_of_birth: birthData.time_of_birth,
+          place_of_birth: birthData.place_of_birth,
+          latitude: birthData.latitude,
+          longitude: birthData.longitude,
+          timezone: birthData.timezone,
+          chart_data: chartData,
+        });
+        console.log('✅ Birth chart saved');
+      } catch (chartError) {
+        console.error('⚠️ Chart generation failed (non-blocking):', chartError);
+      }
+
+      console.log('🎉 Registration complete!');
+
+      // Check if email confirmation is required
+      if (!authData.session) {
+        // Email confirmation required
+        setError(null);
+        alert("✅ Registration successful!\n\nWe've sent a confirmation email to " + accountData.email + ".\n\nPlease check your inbox and click the confirmation link to access your account.\n\nYour birth chart is already prepared and waiting!");
+        router.push("/login");
+      } else {
+        // No email confirmation needed - direct login
+        alert("🎉 Registration successful!\n\nYour birth chart has been generated!\n\nWelcome to your personalized Vedic astrology dashboard.");
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      console.error("Registration error:", err);
+      setError(err.message || "Registration failed. Please try again.");
       setIsLoading(false);
-      window.location.href = "/dashboard";
-    }, 1000);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-muted/50 to-muted p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-2xl">
         {/* Logo */}
         <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center space-x-2">
-            <Star className="w-10 h-10 text-primary" />
-            <span className="text-2xl font-bold">Vedic Astrology</span>
+          <Link href="/">
+            <VedicLogo size="lg" showText />
           </Link>
         </div>
 
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-            <CardDescription>
-              Start your journey with authentic Vedic wisdom
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="John Doe"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
+        <GlassCard variant="gradient" animated>
+          <GlassCardHeader className="space-y-1">
+            <GlassCardTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
+              {step === 1 ? "Create Your Account" : "Complete Your Birth Profile"}
+            </GlassCardTitle>
+            <GlassCardDescription>
+              {step === 1
+                ? "Start your journey with authentic Vedic wisdom"
+                : "We'll use this to generate your personalized birth chart"}
+            </GlassCardDescription>
+          </GlassCardHeader>
+
+          <GlassCardContent>
+            {/* Progress Indicator */}
+            <div className="flex items-center justify-center mb-6">
+              <div className="flex items-center space-x-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  step === 1 ? 'bg-primary text-primary-foreground' : 'bg-primary/20 text-primary'
+                }`}>
+                  1
+                </div>
+                <div className="w-12 h-0.5 bg-primary/20"></div>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                }`}>
+                  2
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  minLength={8}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Must be at least 8 characters
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  {error}
                 </p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  minLength={8}
-                />
-              </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create account"}
-              </Button>
-            </form>
+            )}
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
+            {/* Step 1: Account Details */}
+            {step === 1 && (
+              <form onSubmit={handleStep1Submit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name *</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={accountData.name}
+                      onChange={(e) => setAccountData({ ...accountData, name: e.target.value })}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
 
-            {/* Social Login */}
-            <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" type="button" disabled={isLoading}>
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Google
-              </Button>
-              <Button variant="outline" type="button" disabled={isLoading}>
-                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"/>
-                </svg>
-                GitHub
-              </Button>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={accountData.email}
+                      onChange={(e) => setAccountData({ ...accountData, email: e.target.value })}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="At least 6 characters"
+                      value={accountData.password}
+                      onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
+                      className="pl-10"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="Repeat your password"
+                      value={accountData.confirmPassword}
+                      onChange={(e) => setAccountData({ ...accountData, confirmPassword: e.target.value })}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full bg-gradient-to-r from-primary to-gold">
+                  Next: Birth Details
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </form>
+            )}
+
+            {/* Step 2: Birth Details */}
+            {step === 2 && (
+              <form onSubmit={handleFinalSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="date_of_birth">Date of Birth *</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="date_of_birth"
+                      type="date"
+                      value={birthData.date_of_birth}
+                      onChange={(e) => setBirthData({ ...birthData, date_of_birth: e.target.value })}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="time_of_birth">Time of Birth *</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="time_of_birth"
+                      type="time"
+                      value={birthData.time_of_birth}
+                      onChange={(e) => setBirthData({ ...birthData, time_of_birth: e.target.value })}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use 24-hour format (e.g., 14:30). Check your birth certificate for accuracy.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="place_of_birth">Place of Birth *</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                    <div className="pl-10">
+                      <LocationAutocomplete
+                        value={birthData.place_of_birth}
+                        onSelect={handleLocationSelect}
+                        placeholder="Search for your birth city..."
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Type and select from dropdown for accurate coordinates
+                  </p>
+                </div>
+
+                {birthData.latitude !== 0 && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">📍 Location Confirmed:</p>
+                    <p className="text-sm font-medium">{birthData.place_of_birth}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Coordinates: {birthData.latitude.toFixed(4)}°, {birthData.longitude.toFixed(4)}° | {birthData.timezone}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex space-x-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setStep(1)}
+                    disabled={isLoading}
+                    className="flex-1"
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="flex-1 bg-gradient-to-r from-primary to-gold"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      <>
+                        Complete Registration
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </GlassCardContent>
+
+          <GlassCardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center text-muted-foreground">
               Already have an account?{" "}
               <Link href="/login" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </div>
-          </CardFooter>
-        </Card>
+          </GlassCardFooter>
+        </GlassCard>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
           By continuing, you agree to our{" "}

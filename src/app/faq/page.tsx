@@ -32,12 +32,12 @@ const faqs = [
     category: "Features",
     questions: [
       {
-        q: "What's included in the free plan?",
-        a: "The free plan includes basic birth chart analysis, daily horoscope, one numerology calculation, Vastu analysis for 3 rooms, and 5 AI queries per day."
+        q: "What features are available on the platform?",
+        a: "We offer comprehensive birth chart analysis with detailed planetary positions, Vimshottari Dasha predictions, daily personalized horoscopes, numerology calculations, Vastu analysis with real-time compass, gemstone recommendations, and AI-powered astrological guidance. Each feature provides in-depth, detailed insights based on authentic Vedic astrology principles."
       },
       {
-        q: "What's the difference between Premium and Annual plans?",
-        a: "Premium gives you unlimited access to all features monthly, while Annual plan offers the same benefits at a 33% discount plus exclusive perks like annual detailed reports, webinars, and VIP support."
+        q: "How detailed are the birth chart analyses?",
+        a: "Our birth chart analyses are extremely comprehensive, including planetary positions in signs and houses, nakshatra placements, aspects, yogas, doshas, complete Maha Dasha and Antar Dasha periods with detailed predictions, gemstone recommendations, and personalized remedies. We prioritize depth and accuracy in every reading."
       }
     ]
   },

@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Compass, MapPin, Home, Sparkles, AlertCircle } from "lucide-react";
+import { Compass, MapPin, Home, Sparkles, AlertCircle, Target } from "lucide-react";
+import { compassService, getVastuDirection, type CompassReading } from "@/lib/compass";
+import { getUserProfile } from "@/lib/supabase/birth-charts";
 
 type Direction = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
@@ -96,49 +98,62 @@ const vasturecommendations: { [key in Direction]: {
 };
 
 export default function VastuPage() {
-  const [heading, setHeading] = useState<number | null>(null);
+  const [compassReading, setCompassReading] = useState<CompassReading | null>(null);
   const [direction, setDirection] = useState<Direction | null>(null);
   const [roomName, setRoomName] = useState("");
   const [roomType, setRoomType] = useState("bedroom");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isCalibrating, setIsCalibrating] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && "DeviceOrientationEvent" in window) {
-      // Check if we have permission to use compass
-      if (typeof (DeviceOrientationEvent as any).requestPermission === "function") {
-        setHasPermission(false);
-      } else {
-        setHasPermission(true);
-        startCompass();
-      }
-    }
+    initializeCompass();
+    return () => {
+      compassService.stop();
+    };
   }, []);
 
+  const initializeCompass = async () => {
+    // Check if compass is supported
+    if (!compassService.isSupported()) {
+      setHasPermission(false);
+      return;
+    }
+
+    // Load user profile for location-based calibration
+    const profile = await getUserProfile();
+
+    if (profile && profile.latitude && profile.longitude) {
+      setIsCalibrating(true);
+      await compassService.setCalibration(profile.latitude, profile.longitude);
+      setIsCalibrating(false);
+    }
+
+    // Check if permission is needed (iOS)
+    const supported = typeof (DeviceOrientationEvent as any).requestPermission === 'function';
+
+    if (supported) {
+      setHasPermission(false);
+    } else {
+      setHasPermission(true);
+      startCompass();
+    }
+  };
+
   const requestPermission = async () => {
-    try {
-      const permission = await (DeviceOrientationEvent as any).requestPermission();
-      if (permission === "granted") {
-        setHasPermission(true);
-        startCompass();
-      }
-    } catch (error) {
-      console.error("Permission denied", error);
+    const granted = await compassService.requestPermission();
+    if (granted) {
+      setHasPermission(true);
+      startCompass();
     }
   };
 
   const startCompass = () => {
-    if (typeof window !== "undefined") {
-      window.addEventListener("deviceorientation", handleOrientation);
-    }
-  };
-
-  const handleOrientation = (event: DeviceOrientationEvent) => {
-    if (event.alpha !== null) {
-      const compassHeading = 360 - event.alpha;
-      setHeading(Math.round(compassHeading));
-      setDirection(getDirectionFromDegrees(compassHeading));
-    }
+    compassService.start((reading: CompassReading) => {
+      setCompassReading(reading);
+      const vastuDir = getVastuDirection(reading.heading);
+      setDirection(vastuDir);
+    });
   };
 
   const handleAnalyze = () => {
@@ -151,8 +166,15 @@ export default function VastuPage() {
 
   // For desktop/devices without compass, use simulated direction
   const simulateDirection = (dir: Direction) => {
+    const degrees = getDegreesFromDirection(dir);
     setDirection(dir);
-    setHeading(getDegreesFromDirection(dir));
+    setCompassReading({
+      heading: degrees,
+      accuracy: 45,
+      calibrated: false,
+      magneticHeading: degrees,
+      trueHeading: degrees,
+    });
   };
 
   const getDegreesFromDirection = (dir: Direction): number => {
@@ -165,16 +187,18 @@ export default function VastuPage() {
   const currentRecommendations = direction ? vasturecommendations[direction] : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 md:pb-6">
       <div>
-        <h1 className="text-3xl font-bold">Vastu Compass</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-purple to-gold bg-clip-text text-transparent">
+          Vastu Compass
+        </h1>
         <p className="text-muted-foreground mt-2">
           AI-powered directional analysis for optimal space arrangement
         </p>
       </div>
 
       {/* Compass Display */}
-      <Card className="border-primary/50">
+      <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
         <CardHeader>
           <CardTitle>Real-Time Compass</CardTitle>
           <CardDescription>
@@ -183,24 +207,70 @@ export default function VastuPage() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center space-y-4">
-            {/* Compass Visualization */}
-            <div className="relative w-64 h-64 rounded-full border-4 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
-              <div
-                className="absolute w-full h-full transition-transform duration-300"
-                style={{ transform: `rotate(${heading || 0}deg)` }}
-              >
-                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1 h-20 bg-primary origin-bottom"></div>
-                <div className="absolute top-2 left-1/2 -translate-x-1/2">
-                  <Compass className="w-8 h-8 text-primary" />
+            {/* Calibration Status */}
+            {isCalibrating && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 w-full max-w-md">
+                <div className="flex items-center space-x-3">
+                  <Target className="w-5 h-5 text-primary animate-pulse" />
+                  <p className="text-sm">Calibrating compass for your location...</p>
                 </div>
               </div>
+            )}
+
+            {/* Compass Visualization */}
+            <div className="relative w-64 h-64 rounded-full border-4 border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center">
+              {/* Direction markers */}
+              <div className="absolute inset-0">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 text-xs font-bold text-primary">N</div>
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">E</div>
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-xs font-bold text-muted-foreground">S</div>
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">W</div>
+              </div>
+
+              {/* Rotating needle */}
+              <div
+                className="absolute w-full h-full transition-transform duration-300 ease-out"
+                style={{ transform: `rotate(${compassReading?.heading || 0}deg)` }}
+              >
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1 h-20 bg-gradient-to-b from-red-500 to-primary origin-bottom rounded-full"></div>
+                <div className="absolute top-2 left-1/2 -translate-x-1/2">
+                  <Compass className="w-8 h-8 text-red-500" />
+                </div>
+              </div>
+
+              {/* Center display */}
               <div className="absolute text-center z-10">
                 <div className="text-6xl font-bold text-primary">{direction || "--"}</div>
                 <div className="text-sm text-muted-foreground mt-2">
-                  {heading !== null ? `${heading}°` : "Detecting..."}
+                  {compassReading ? `${Math.round(compassReading.heading)}°` : "Detecting..."}
                 </div>
+                {compassReading && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    ±{Math.round(compassReading.accuracy)}° accuracy
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Compass Status Indicators */}
+            {compassReading && (
+              <div className="grid grid-cols-3 gap-3 w-full max-w-md text-center text-xs">
+                <div className="p-2 bg-muted rounded-lg">
+                  <p className="text-muted-foreground">Magnetic</p>
+                  <p className="font-bold">{Math.round(compassReading.magneticHeading)}°</p>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <p className="text-muted-foreground">True North</p>
+                  <p className="font-bold">{Math.round(compassReading.trueHeading)}°</p>
+                </div>
+                <div className="p-2 bg-muted rounded-lg">
+                  <p className="text-muted-foreground">Status</p>
+                  <p className={`font-bold ${compassReading.calibrated ? 'text-green-500' : 'text-orange-500'}`}>
+                    {compassReading.calibrated ? 'Calibrated' : 'Uncalibrated'}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {hasPermission === false && (
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 w-full max-w-md">
@@ -246,7 +316,7 @@ export default function VastuPage() {
       </Card>
 
       {/* Room Details */}
-      <Card>
+      <Card className="border-primary/20">
         <CardHeader>
           <CardTitle>Room Details</CardTitle>
           <CardDescription>Tell us about the space you want to analyze</CardDescription>
@@ -306,7 +376,7 @@ export default function VastuPage() {
         <div className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             {/* Element & Planet */}
-            <Card>
+            <Card className="border-primary/20">
               <CardHeader>
                 <CardTitle>Direction Properties</CardTitle>
                 <CardDescription>Elemental and planetary influences</CardDescription>
@@ -324,7 +394,7 @@ export default function VastuPage() {
             </Card>
 
             {/* Colors */}
-            <Card>
+            <Card className="border-primary/20">
               <CardHeader>
                 <CardTitle>Recommended Colors</CardTitle>
                 <CardDescription>Best colors for this direction</CardDescription>

@@ -1,167 +1,292 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
-import { Star, Calendar, TrendingUp, Sparkles, ArrowRight } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Star, Calendar, TrendingUp, Sparkles, ArrowRight, Sun, Heart, Briefcase, DollarSign, Activity, Clock, Compass, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { getUserProfile } from "@/lib/supabase/birth-charts";
+import { getCompleteBirthChart, convertToAPIFormat } from "@/lib/astrology-api";
+import DailyHoroscope from "@/components/astrology/DailyHoroscope";
+import { YearlyPredictions } from "@/components/astrology/YearlyPredictions";
+import { MonthlyPredictions } from "@/components/astrology/MonthlyPredictions";
+
+interface UserChartData {
+  moonSign?: string;
+  nakshatra?: string;
+  nakshatraPada?: number;
+  ascendant?: string;
+  mahaDasha?: string;
+  antarDasha?: string;
+}
 
 export default function DashboardPage() {
+  const [userName, setUserName] = useState<string>("");
+  const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<UserChartData>({});
+  const [hasProfile, setHasProfile] = useState(false);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  async function loadUserData() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get profile
+      const profile = await getUserProfile();
+
+      let name = "";
+      if (profile?.full_name) {
+        name = profile.full_name.split(' ')[0]; // First name only
+      } else {
+        const emailName = user.email?.split('@')[0] || 'User';
+        name = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      }
+      setUserName(name);
+
+      // If user has complete birth details, calculate their chart
+      if (profile && profile.date_of_birth && profile.time_of_birth && profile.latitude && profile.longitude) {
+        setHasProfile(true);
+        try {
+          const apiDetails = convertToAPIFormat({
+            dateOfBirth: profile.date_of_birth,
+            timeOfBirth: profile.time_of_birth,
+            timezone: profile.timezone || 'Asia/Kolkata',
+            latitude: profile.latitude,
+            longitude: profile.longitude,
+          });
+
+          const data = await getCompleteBirthChart(apiDetails);
+          const planets = data?.planetPositions?.planets || [];
+          const moon = planets.find((p: any) => p.name === 'Moon');
+          const ascendant = data?.kundli?.ascendant;
+          const dasha = data?.advancedKundli?.vimshottari_dasha;
+
+          setChartData({
+            moonSign: moon?.sign?.name,
+            nakshatra: moon?.nakshatra?.name,
+            nakshatraPada: moon?.nakshatra?.pada,
+            ascendant: ascendant?.sign?.name,
+            mahaDasha: dasha?.maha_dasha?.planet,
+            antarDasha: dasha?.antar_dasha?.planet,
+          });
+        } catch (error) {
+          console.error('Error calculating chart:', error);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user:', error);
+      setUserName('User');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20 md:pb-6">
       <div>
-        <h1 className="text-3xl font-bold">Welcome back, John!</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-purple to-gold bg-clip-text text-transparent">
+          {loading ? 'Loading...' : `Welcome, ${userName}!`}
+        </h1>
         <p className="text-muted-foreground mt-2">
-          Here's your personalized astrological overview for today
+          {hasProfile ?
+            "Here's your personalized astrological overview for today" :
+            "Set up your birth details to see personalized predictions"}
         </p>
       </div>
 
-      {/* Today's Insight */}
-      <Card className="border-primary/50 bg-gradient-to-br from-primary/5 to-primary/10">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <CardTitle>Today's Insight</CardTitle>
-          </div>
-          <CardDescription>Based on your birth chart and current transits</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm leading-relaxed mb-4">
-            The Moon transits through your 10th house today, highlighting your career and public image.
-            This is an excellent time to network and make professional connections. Jupiter's aspect
-            brings optimism and expansion in your creative projects.
-          </p>
-          <div className="flex items-center space-x-2">
-            <div className="flex-1 bg-primary/20 rounded-full h-2">
-              <div className="bg-primary h-2 rounded-full" style={{ width: "75%" }}></div>
+      {!hasProfile && !loading && (
+        <GlassCard variant="primary" className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Complete Your Profile</h3>
+              <p className="text-sm text-muted-foreground">
+                Add your birth details to unlock personalized horoscope, dashas, and predictions
+              </p>
             </div>
-            <span className="text-sm font-medium">75% Favorable</span>
+            <Link href="/dashboard/profile">
+              <Button>
+                Set Up Profile
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
-        </CardContent>
-      </Card>
+        </GlassCard>
+      )}
+
+      {hasProfile && !loading && (
+        <>
+          {/* User's Chart Overview */}
+          <GlassCard variant="gradient" className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
+                  Your Birth Chart Overview
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">Based on your birth details</p>
+              </div>
+              <Sun className="w-10 h-10 text-primary" />
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg border border-border bg-card/50">
+                <p className="text-xs text-muted-foreground mb-1">Ascendant (Lagna)</p>
+                <p className="text-lg font-bold text-primary">{chartData.ascendant || 'Loading...'}</p>
+                <p className="text-xs text-muted-foreground mt-1">Rising Sign</p>
+              </div>
+
+              <div className="p-4 rounded-lg border border-border bg-card/50">
+                <p className="text-xs text-muted-foreground mb-1">Moon Sign (Rashi)</p>
+                <p className="text-lg font-bold text-primary">{chartData.moonSign || 'Loading...'}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {chartData.nakshatra ? `${chartData.nakshatra} Nakshatra` : ''}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg border border-border bg-card/50">
+                <p className="text-xs text-muted-foreground mb-1">Current Dasha</p>
+                <p className="text-lg font-bold text-gold">
+                  {chartData.mahaDasha && chartData.antarDasha ?
+                    `${chartData.mahaDasha} - ${chartData.antarDasha}` :
+                    'Loading...'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">Vimshottari Dasha</p>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Predictions Tabs - Daily, Yearly, Monthly */}
+          {chartData.moonSign && chartData.nakshatra && chartData.mahaDasha && chartData.antarDasha && chartData.ascendant && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  <span>Your Personalized Predictions</span>
+                </CardTitle>
+                <CardDescription>Comprehensive astrological forecasts based on your birth chart</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="daily" className="space-y-6">
+                  <TabsList className="grid w-full grid-cols-3 gap-2">
+                    <TabsTrigger value="daily" className="flex items-center space-x-2">
+                      <Sun className="w-4 h-4" />
+                      <span>Today</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="yearly" className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>Year {new Date().getFullYear()}</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="monthly" className="flex items-center space-x-2">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Monthly</span>
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="daily">
+                    <DailyHoroscope
+                      moonSign={chartData.moonSign}
+                      nakshatra={chartData.nakshatra}
+                      mahaDasha={chartData.mahaDasha}
+                      antarDasha={chartData.antarDasha}
+                      ascendant={chartData.ascendant}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="yearly">
+                    <YearlyPredictions
+                      moonSign={chartData.moonSign}
+                      ascendant={chartData.ascendant}
+                      mahaDasha={chartData.mahaDasha}
+                      year={new Date().getFullYear()}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="monthly">
+                    <MonthlyPredictions
+                      moonSign={chartData.moonSign}
+                      ascendant={chartData.ascendant}
+                      year={new Date().getFullYear()}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
 
       {/* Quick Actions */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <Link href="/dashboard/astrology">
+        <Card className="border-primary/20 hover:shadow-lg transition-shadow cursor-pointer group">
+          <Link href="/dashboard/astrology" className="block">
             <CardHeader>
-              <Star className="w-8 h-8 text-primary mb-2" />
-              <CardTitle className="group-hover:text-primary transition-colors">Birth Chart</CardTitle>
-              <CardDescription>View your complete Kundali and predictions</CardDescription>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Star className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Birth Chart</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Kundli Analysis</p>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <Button variant="ghost" className="w-full justify-between group-hover:bg-primary/10">
-                Open Chart
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Get complete Vedic astrology birth chart with planetary positions, dashas, and doshas
+              </p>
             </CardContent>
           </Link>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <Link href="/dashboard/numerology">
+        <Card className="border-primary/20 hover:shadow-lg transition-shadow cursor-pointer group">
+          <Link href="/dashboard/numerology" className="block">
             <CardHeader>
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mb-2">
-                <span className="text-primary font-bold text-lg">9</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple to-purple/60 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Numerology</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Life Path Numbers</p>
+                </div>
               </div>
-              <CardTitle className="group-hover:text-primary transition-colors">Numerology</CardTitle>
-              <CardDescription>Discover your life path and destiny numbers</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="ghost" className="w-full justify-between group-hover:bg-primary/10">
-                Calculate Numbers
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Discover your life path, destiny, and personality numbers with detailed analysis
+              </p>
             </CardContent>
           </Link>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-          <Link href="/dashboard/vastu">
+        <Card className="border-primary/20 hover:shadow-lg transition-shadow cursor-pointer group">
+          <Link href="/dashboard/vastu" className="block">
             <CardHeader>
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center mb-2">
-                <span className="text-primary font-bold">N</span>
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gold to-gold/60 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Compass className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Vastu</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Space Harmony</p>
+                </div>
               </div>
-              <CardTitle className="group-hover:text-primary transition-colors">Vastu Compass</CardTitle>
-              <CardDescription>AI-powered directional recommendations</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="ghost" className="w-full justify-between group-hover:bg-primary/10">
-                Open Compass
-                <ArrowRight className="w-4 h-4" />
-              </Button>
+              <p className="text-sm text-muted-foreground">
+                Real-time compass for Vastu-compliant directions and energy optimization
+              </p>
             </CardContent>
           </Link>
         </Card>
       </div>
 
-      {/* Current Planetary Transits */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Current Planetary Transits</CardTitle>
-              <CardDescription>Active planetary movements affecting you</CardDescription>
-            </div>
-            <Calendar className="w-5 h-5 text-muted-foreground" />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { planet: "Jupiter", house: "10th House", effect: "Career Growth", impact: "positive" },
-              { planet: "Saturn", house: "7th House", effect: "Relationship Lessons", impact: "neutral" },
-              { planet: "Mars", house: "3rd House", effect: "Communication Energy", impact: "positive" },
-            ].map((transit) => (
-              <div key={transit.planet} className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center",
-                    transit.impact === "positive" ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-500"
-                  )}>
-                    <Star className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{transit.planet} in {transit.house}</p>
-                    <p className="text-sm text-muted-foreground">{transit.effect}</p>
-                  </div>
-                </div>
-                <TrendingUp className={cn(
-                  "w-5 h-5",
-                  transit.impact === "positive" ? "text-green-500" : "text-blue-500"
-                )} />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* AI Assistant Teaser */}
-      <Card className="border-primary/50">
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            <CardTitle>Ask Your AI Assistant</CardTitle>
-          </div>
-          <CardDescription>Get personalized astrological guidance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-muted/50 rounded-lg p-4 mb-4">
-            <p className="text-sm italic text-muted-foreground">
-              "What should I focus on this week based on my birth chart?"
-            </p>
-          </div>
-          <Link href="/dashboard/ai">
-            <Button className="w-full">
-              Start Conversation
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
     </div>
   );
-}
-
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }

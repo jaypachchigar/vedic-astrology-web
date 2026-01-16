@@ -4,13 +4,27 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, Send, User, Bot, Calendar, Star, Compass } from "lucide-react";
+import { Sparkles, Send, User, Bot, Calendar, Star, Compass, Trash2, Loader2 } from "lucide-react";
+import { getChatHistory, saveChatMessage, clearChatHistory } from "@/lib/supabase/chat-history";
+import { getUserProfile, getUserBirthCharts } from "@/lib/supabase/birth-charts";
+import { intelligentAssistant, BirthChartContext } from "@/lib/ai/intelligent-assistant";
+import { supabase } from "@/lib/supabase/client";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+}
+
+interface UserProfile {
+  full_name?: string;
+  date_of_birth?: string;
+  time_of_birth?: string;
+  place_of_birth?: string;
+  latitude?: number;
+  longitude?: number;
+  timezone?: string;
 }
 
 const suggestedQuestions = [
@@ -23,16 +37,13 @@ const suggestedQuestions = [
 ];
 
 export default function AIAssistantPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "assistant",
-      content: "Namaste! I'm your personal Vedic astrology AI assistant. I can help you understand your birth chart, current planetary transits, numerology, Vastu recommendations, and much more. What would you like to know?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [birthChartData, setBirthChartData] = useState<any>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -42,6 +53,164 @@ export default function AIAssistantPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Load chat history and user profile on mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoadingHistory(true);
+
+        // Get current user ID
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setUserId(user.id);
+        }
+
+        // Load user profile
+        const profile = await getUserProfile();
+        setUserProfile(profile);
+
+        // Load birth chart data
+        const charts = await getUserBirthCharts();
+        if (charts && charts.length > 0) {
+          // Use the most recent chart
+          setBirthChartData(charts[0]);
+          console.log('✅ Birth chart data loaded:', charts[0]);
+        } else {
+          console.log('⚠️ No birth chart data found');
+        }
+
+        // Load chat history
+        const history = await getChatHistory();
+
+        if (history && history.length > 0) {
+          // Convert saved history to Message format
+          const loadedMessages: Message[] = history.map((msg) => ({
+            id: msg.message_id,
+            role: msg.role as "user" | "assistant",
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+          }));
+          setMessages(loadedMessages);
+          console.log(`✅ Loaded ${loadedMessages.length} messages from history`);
+        } else {
+          // No history, show welcome message
+          let welcomeContent = '';
+
+          if (profile?.full_name) {
+            if (profile.date_of_birth && profile.time_of_birth) {
+              welcomeContent = `Namaste ${profile.full_name}! 🙏\n\nI'm your personal Vedic astrology AI assistant with access to your complete birth profile:\n\n📅 Birth Date: ${profile.date_of_birth}\n⏰ Birth Time: ${profile.time_of_birth}\n📍 Birth Place: ${profile.place_of_birth || 'Available'}\n\nI can provide detailed, personalized insights based on your actual birth chart, including:\n• Planetary positions and their effects\n• Current Dasha periods and predictions\n• Career, relationships, health guidance\n• Numerology analysis\n• Vastu recommendations\n• And much more!\n\nWhat would you like to know about your astrological chart?`;
+            } else {
+              welcomeContent = `Namaste ${profile.full_name}! 🙏\n\nI'm your personal Vedic astrology AI assistant. To provide you with the most accurate and personalized insights, please complete your birth profile (date, time, and place of birth) by visiting the Profile page.\n\nOnce your profile is complete, I'll be able to analyze your actual birth chart and provide detailed guidance!\n\nHow can I assist you today?`;
+            }
+          } else {
+            welcomeContent = "Namaste! 🙏\n\nI'm your personal Vedic astrology AI assistant. I can help you understand birth charts, current planetary transits, numerology, Vastu recommendations, and much more.\n\nPlease complete your profile to get personalized insights based on your actual birth chart!\n\nWhat would you like to know?";
+          }
+
+          const welcomeMsg: Message = {
+            id: "welcome-" + Date.now(),
+            role: "assistant",
+            content: welcomeContent,
+            timestamp: new Date(),
+          };
+          setMessages([welcomeMsg]);
+          // Save welcome message
+          await saveChatMessage(welcomeMsg.id, welcomeMsg.role, welcomeMsg.content, welcomeMsg.timestamp);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // Show default welcome message on error
+        const welcomeMsg: Message = {
+          id: "welcome-" + Date.now(),
+          role: "assistant",
+          content: "Namaste! I'm your personal Vedic astrology AI assistant. How can I help you today?",
+          timestamp: new Date(),
+        };
+        setMessages([welcomeMsg]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  // Build birth chart context from loaded data
+  const buildBirthChartContext = (): BirthChartContext | null => {
+    // If no user profile, can't build context
+    if (!userProfile) {
+      console.log('⚠️ No user profile found');
+      return null;
+    }
+
+    // If we have birth chart data from database, use it
+    if (birthChartData && birthChartData.planets) {
+      try {
+        // Extract Moon sign and nakshatra
+        const moonPlanet = birthChartData.planets?.find((p: any) => p.name === 'Moon' || p.full_name === 'Moon');
+        const moonSign = moonPlanet?.sign?.name || '';
+        const moonNakshatra = moonPlanet?.nakshatra?.name || '';
+
+        // Extract Sun sign
+        const sunPlanet = birthChartData.planets?.find((p: any) => p.name === 'Sun' || p.full_name === 'Sun');
+        const sunSign = sunPlanet?.sign?.name || '';
+
+        // Extract Ascendant
+        const ascendant = birthChartData.ascendant?.sign?.name || birthChartData.planets?.find((p: any) => p.name === 'Ascendant')?.sign?.name || '';
+
+        // Extract Dasha
+        const mahaDasha = birthChartData.dasha?.maha_dasha?.planet || birthChartData.dasha?.current_maha_dasha?.planet || '';
+        const antarDasha = birthChartData.dasha?.antar_dasha?.planet || birthChartData.dasha?.current_antar_dasha?.planet || '';
+
+        const context: BirthChartContext = {
+          moonSign,
+          moonNakshatra,
+          ascendant,
+          sunSign,
+          mahaDasha,
+          antarDasha,
+          dateOfBirth: userProfile.date_of_birth || birthChartData.date_of_birth || '',
+          timeOfBirth: userProfile.time_of_birth || birthChartData.time_of_birth || '',
+          latitude: userProfile.latitude || birthChartData.latitude || 0,
+          longitude: userProfile.longitude || birthChartData.longitude || 0,
+          planetPositions: birthChartData.planets || [],
+          houses: birthChartData.houses || [],
+          yogas: [], // Can be extracted if available
+        };
+
+        console.log('📊 Built birth chart context from database:', context);
+        return context;
+      } catch (error) {
+        console.error('❌ Error building birth chart context:', error);
+        return null;
+      }
+    }
+
+    // If no birth chart in database but we have profile data, return basic context
+    // This allows AI to still answer based on birth date and location
+    if (userProfile.date_of_birth && userProfile.time_of_birth && userProfile.latitude) {
+      console.log('⚠️ No birth chart found in database, using basic profile data');
+      const basicContext: BirthChartContext = {
+        moonSign: '',
+        moonNakshatra: '',
+        ascendant: '',
+        sunSign: '',
+        mahaDasha: '',
+        antarDasha: '',
+        dateOfBirth: userProfile.date_of_birth,
+        timeOfBirth: userProfile.time_of_birth,
+        latitude: userProfile.latitude || 0,
+        longitude: userProfile.longitude || 0,
+        planetPositions: [],
+        houses: [],
+        yogas: [],
+      };
+      return basicContext;
+    }
+
+    console.log('⚠️ Insufficient profile data for birth chart context');
+    return null;
+  };
 
   const handleSend = async (messageText?: string) => {
     const text = messageText || input;
@@ -58,75 +227,148 @@ export default function AIAssistantPage() {
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response (in production, this would call your AI API)
-    setTimeout(() => {
+    // Save user message to Supabase
+    try {
+      await saveChatMessage(userMessage.id, userMessage.role, userMessage.content, userMessage.timestamp);
+      console.log('✅ User message saved to Supabase');
+    } catch (error) {
+      console.error('❌ Failed to save user message:', error);
+    }
+
+    try {
+      // Build birth chart context from user data
+      const context = buildBirthChartContext();
+
+      if (!context) {
+        // No birth chart data - ask user to complete profile
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `I notice you haven't completed your birth profile yet. To provide you with accurate, personalized astrological insights based on your actual birth chart, I need your complete birth details.\n\nPlease visit your Profile page to add:\n• Date of Birth\n• Time of Birth  \n• Place of Birth\n\nOnce your profile is complete, I'll be able to:\n• Analyze your birth chart with precise planetary positions\n• Provide answers based on your Moon sign, Nakshatra, and Ascendant\n• Calculate your current Maha and Antar Dasha periods\n• Offer specific remedies based on your chart\n• Give you detailed, personalized guidance (1000+ words per answer)\n\nWould you like general astrological guidance in the meantime?`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+        await saveChatMessage(aiMessage.id, aiMessage.role, aiMessage.content, aiMessage.timestamp);
+        setIsLoading(false);
+        return;
+      }
+
+      // Ask intelligent assistant with birth chart context
+      console.log('🤖 Asking intelligent assistant with context:', context);
+      const response = await intelligentAssistant.ask({
+        question: text,
+        context,
+        userId: userId || 'anonymous',
+      });
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: getSimulatedResponse(text),
+        content: response.answer,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
+
+      // Save AI response to Supabase
+      await saveChatMessage(aiMessage.id, aiMessage.role, aiMessage.content, aiMessage.timestamp);
+      console.log('✅ AI response saved (Source:', response.source, ', Confidence:', response.confidence, ')');
+
       setIsLoading(false);
-    }, 1500);
+    } catch (error) {
+      console.error('❌ Error generating AI response:', error);
+
+      // Fallback error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "I apologize, but I encountered an error while analyzing your question. Please try again or rephrase your question.",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+      await saveChatMessage(errorMessage.id, errorMessage.role, errorMessage.content, errorMessage.timestamp);
+      setIsLoading(false);
+    }
   };
 
-  const getSimulatedResponse = (question: string): string => {
-    const lowerQuestion = question.toLowerCase();
-
-    if (lowerQuestion.includes("career") || lowerQuestion.includes("job") || lowerQuestion.includes("profession")) {
-      return "Based on your birth chart, I can see that your 10th house (house of career) is influenced by Saturn, which indicates success in structured, disciplined professions. With Jupiter currently transiting your career sector, this is an excellent time for professional growth.\n\nRecommendations:\n• Consider leadership roles or entrepreneurship\n• Best period: The next 3-6 months during Jupiter's favorable transit\n• Lucky days: Thursday and Saturday\n• Remedy: Wear a Blue Sapphire for Saturn after consulting an astrologer";
+  const handleClearChat = async () => {
+    if (!confirm('Are you sure you want to clear all chat history? This cannot be undone.')) {
+      return;
     }
 
-    if (lowerQuestion.includes("business") || lowerQuestion.includes("start")) {
-      return "For starting a new business, I recommend analyzing the Muhurat (auspicious timing). Based on current planetary positions:\n\n• Most favorable period: Between the 15th and 25th of next month\n• Avoid: Rahu Kaal timings\n• Direction: East or North-facing office is ideal\n• Day: Thursday during the waxing moon phase\n\nJupiter's aspect on your 2nd house (wealth) suggests financial success in ventures related to education, consulting, or finance.";
-    }
+    try {
+      await clearChatHistory();
 
-    if (lowerQuestion.includes("transit") || lowerQuestion.includes("planetary")) {
-      return "Currently active transits affecting you:\n\n🪐 **Jupiter Transit**: Moving through your 10th house - Career expansion and recognition\n♄ **Saturn Transit**: In your 7th house - Lessons in partnerships and relationships\n♂ **Mars Transit**: Through your 3rd house - Increased communication and courage\n\nThe most significant transit is Jupiter's, which will bring opportunities for growth in your professional life over the next few months.";
-    }
+      // Show new welcome message
+      const welcomeMsg: Message = {
+        id: "welcome-" + Date.now(),
+        role: "assistant",
+        content: userProfile?.full_name
+          ? `Namaste ${userProfile.full_name}! I'm ready to assist you with fresh insights. What would you like to know?`
+          : "Namaste! Chat cleared. How can I assist you today?",
+        timestamp: new Date(),
+      };
 
-    if (lowerQuestion.includes("relationship") || lowerQuestion.includes("love") || lowerQuestion.includes("marriage")) {
-      return "Looking at your 7th house (relationships and marriage):\n\nYour Venus is well-placed, indicating harmonious relationships. However, Saturn's current transit suggests a period of maturity and learning in partnerships.\n\nGuidance:\n• This is a time to build deeper, more committed relationships\n• Best compatibility: Life path numbers 3, 6, and 9\n• Favorable days: Friday (Venus day)\n• Remedy: Wear white or light pink on Fridays, donate to charity";
-    }
+      setMessages([welcomeMsg]);
+      await saveChatMessage(welcomeMsg.id, welcomeMsg.role, welcomeMsg.content, welcomeMsg.timestamp);
 
-    if (lowerQuestion.includes("remedy") || lowerQuestion.includes("remedies")) {
-      return "Based on your current planetary positions, here are personalized remedies:\n\n**For Jupiter (Guru)**:\n• Chant: \"Om Gram Greem Graum Sah Gurave Namah\" 108 times\n• Day: Thursday mornings\n• Gemstone: Yellow Sapphire (after consultation)\n• Charity: Donate yellow items to temples\n\n**For Saturn (Shani)**:\n• Light a sesame oil lamp on Saturdays\n• Wear dark blue or black on Saturdays\n• Help the elderly and underprivileged\n\n**General**:\n• Practice meditation during sunrise\n• Keep your Northeast corner clean and clutter-free";
+      console.log('✅ Chat history cleared');
+    } catch (error) {
+      console.error('❌ Failed to clear chat history:', error);
+      alert('Failed to clear chat history. Please try again.');
     }
-
-    if (lowerQuestion.includes("dasha")) {
-      return "Your current Vimshottari Dasha period:\n\n**Maha Dasha**: Jupiter (Guru) - 2020 to 2036\n**Antar Dasha**: Saturn (Shani) - 2024 to 2026\n**Pratyantar Dasha**: Mercury (Budha) - Current\n\nThis combination suggests:\n• A period of structured growth and learning\n• Success through disciplined effort\n• Good for long-term investments and planning\n• Focus on building solid foundations\n\nThe Jupiter-Saturn combination is generally favorable, though it requires patience and consistent effort.";
-    }
-
-    // Default response
-    return "That's an interesting question! To provide you with the most accurate guidance, I'll need to analyze your birth chart in detail.\n\nCould you tell me more about:\n• Your specific concern or area of interest\n• Any particular timeframe you're asking about\n• Whether you'd like general guidance or specific predictions\n\nMeanwhile, you can also:\n• View your complete birth chart in the Astrology section\n• Check your numerology numbers\n• Get Vastu recommendations for your space\n\nFeel free to ask me anything about Vedic astrology, numerology, or Vastu Shastra!";
   };
+
 
   return (
-    <div className="space-y-6 h-[calc(100vh-12rem)]">
+    <div className="space-y-6 pb-20 md:pb-6">
       <div>
-        <h1 className="text-3xl font-bold">AI Astrology Assistant</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-purple to-gold bg-clip-text text-transparent">
+          AI Astrology Assistant
+        </h1>
         <p className="text-muted-foreground mt-2">
           Get personalized astrological guidance powered by AI
         </p>
       </div>
 
-      <div className="grid md:grid-cols-[1fr_300px] gap-6 h-full">
+      <div className="grid md:grid-cols-[1fr_300px] gap-6 min-h-[600px]">
         {/* Chat Area */}
-        <Card className="flex flex-col h-full">
+        <Card className="flex flex-col h-[600px] border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
           <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <CardTitle>Chat with AI</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <CardTitle>Chat with AI</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearChat}
+                disabled={messages.length === 0 || isLoading}
+                title="Clear chat history"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
             <CardDescription>
               Ask anything about your astrology, numerology, or Vastu
+              {userProfile?.full_name && ` • ${userProfile.full_name}`}
+              {userProfile?.date_of_birth && ` • ${userProfile.date_of_birth}`}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col min-h-0">
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-              {messages.map((message) => (
+            {/* Loading State */}
+            {isLoadingHistory ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-4">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto" />
+                  <p className="text-sm text-muted-foreground">Loading chat history...</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                  {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex items-start space-x-3 ${
@@ -200,6 +442,8 @@ export default function AIAssistantPage() {
                 </Button>
               </form>
             </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

@@ -15,7 +15,7 @@ export default function PrivacyPage() {
           <ul>
             <li>Name, email address, and contact information</li>
             <li>Birth date, time, and place for astrological calculations</li>
-            <li>Payment information for premium subscriptions</li>
+            <li>Account preferences and settings</li>
             <li>Usage data and interaction with our platform</li>
           </ul>
 

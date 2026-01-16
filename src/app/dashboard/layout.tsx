@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Star, Home, User, Calculator, Compass, MessageSquare, Settings, LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+import { VedicLogo } from "@/components/brand/VedicLogo";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -25,16 +28,28 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-purple/5">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b border-border backdrop-blur-md bg-background/90">
-        <div className="container flex h-16 items-center px-4">
-          <Link href="/dashboard" className="flex items-center space-x-2">
-            <Star className="w-6 h-6 text-primary" />
-            <span className="font-bold text-lg">Vedic Astrology</span>
+      <header className="sticky top-0 z-50 w-full border-b border-primary/20 backdrop-blur-md bg-background/90">
+        <div className="max-w-7xl mx-auto flex h-16 items-center px-4">
+          <Link href="/dashboard" className="flex items-center space-x-3">
+            <VedicLogo size="md" animated />
+            <span className="text-xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
+              Vedic Astrology
+            </span>
           </Link>
           <div className="ml-auto flex items-center space-x-4">
             {/* User Menu Dropdown */}
@@ -58,7 +73,10 @@ export default function DashboardLayout({
                       <span>{item.name}</span>
                     </Link>
                   ))}
-                  <button className="flex items-center space-x-2 px-4 py-2 text-sm hover:bg-accent rounded-lg w-full text-left text-destructive">
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center space-x-2 px-4 py-2 text-sm hover:bg-accent rounded-lg w-full text-left text-destructive"
+                  >
                     <LogOut className="w-4 h-4" />
                     <span>Logout</span>
                   </button>
@@ -69,9 +87,12 @@ export default function DashboardLayout({
         </div>
       </header>
 
-      <div className="container flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10 px-4 py-6">
+      {/* Email Verification Banner */}
+      <EmailVerificationBanner />
+
+      <div className="max-w-7xl mx-auto flex-1 items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-10 px-4 py-6">
         {/* Sidebar */}
-        <aside className="fixed top-16 z-30 -ml-2 hidden h-[calc(100vh-4rem)] w-full shrink-0 overflow-y-auto md:sticky md:block">
+        <aside className="fixed top-16 z-30 hidden h-[calc(100vh-4rem)] w-[220px] lg:w-[240px] shrink-0 overflow-y-auto md:sticky md:block">
           <div className="py-6 pr-6 lg:py-8">
             <nav className="space-y-1">
               {navigation.map((item) => {
@@ -94,18 +115,17 @@ export default function DashboardLayout({
               })}
             </nav>
 
-            {/* Subscription Info */}
-            <div className="mt-8 rounded-lg border border-gold/30 bg-gradient-to-br from-gold/5 to-gold/10 p-4 backdrop-blur-sm">
-              <p className="text-sm font-medium mb-2 text-gold-foreground">Free Plan</p>
-              <p className="text-xs text-muted-foreground mb-3">
-                Upgrade to unlock all features
+            {/* Platform Info */}
+            <div className="mt-8 rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 via-purple/5 to-gold/5 p-4 backdrop-blur-sm">
+              <div className="flex items-center space-x-2 mb-2">
+                <Star className="w-4 h-4 text-gold" />
+                <p className="text-sm font-semibold bg-gradient-to-r from-primary via-purple to-gold bg-clip-text text-transparent">
+                  Authentic Vedic Astrology
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Precise calculations powered by astronomy-engine
               </p>
-              <Link
-                href="/pricing"
-                className="inline-flex items-center justify-center rounded-md bg-gradient-to-r from-gold to-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:shadow-lg hover:shadow-gold/20 transition-all w-full"
-              >
-                Upgrade Now
-              </Link>
             </div>
           </div>
         </aside>

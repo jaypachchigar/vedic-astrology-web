@@ -103,7 +103,7 @@ export default function AboutPage() {
               </p>
               <Link href="/register">
                 <button className="bg-gradient-to-r from-primary to-gold text-white px-8 py-3 rounded-lg font-medium">
-                  Get Started Free
+                  Get Started
                 </button>
               </Link>
             </CardContent>

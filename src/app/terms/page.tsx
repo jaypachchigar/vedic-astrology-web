@@ -33,10 +33,10 @@ export default function TermsPage() {
             not be used as the sole basis for making important life decisions.
           </p>
 
-          <h2>5. Payment Terms</h2>
+          <h2>5. Service Terms</h2>
           <p>
-            Premium subscriptions are billed monthly or annually. You may cancel your subscription
-            at any time. Refunds are provided on a case-by-case basis.
+            Our platform provides comprehensive Vedic astrology services and features. You may manage
+            your account settings at any time. Service-related concerns are addressed on a case-by-case basis.
           </p>
 
           <h2>6. Intellectual Property</h2>
