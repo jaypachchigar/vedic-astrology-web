@@ -8,11 +8,11 @@ export default function Home() {
     <main className="min-h-screen">
       {/* Navigation */}
       <nav className="fixed top-0 w-full bg-background/95 backdrop-blur-lg border-b border-border/50 z-50 shadow-sm">
-        <div className="container mx-auto px-4 lg:px-8 py-4">
+        <div className="container mx-auto px-3 md:px-4 lg:px-8 py-2.5 md:py-4">
           <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center space-x-3">
-              <VedicLogo size="md" animated />
-              <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
+            <Link href="/" className="flex items-center space-x-2 md:space-x-3">
+              <VedicLogo size="sm" animated />
+              <span className="text-base md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
                 Vedic Astrology
               </span>
             </Link>
@@ -26,16 +26,16 @@ export default function Home() {
               </a>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               <Link
                 href="/login"
-                className="px-4 py-2 text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="px-3 md:px-4 py-1.5 md:py-2 text-sm md:text-base font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="px-6 py-2.5 text-base font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground rounded-lg hover:opacity-90 transition-opacity shadow-md"
+                className="px-3 md:px-6 py-1.5 md:py-2.5 text-sm md:text-base font-medium bg-gradient-to-r from-primary to-gold text-primary-foreground rounded-lg hover:opacity-90 transition-opacity shadow-md"
               >
                 Get Started
               </Link>
@@ -45,7 +45,7 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-36 pb-24 px-4 lg:px-8">
+      <section className="pt-24 md:pt-36 pb-16 md:pb-24 px-4 lg:px-8">
         <div className="container mx-auto text-center max-w-5xl">
           <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-primary/10 to-gold/10 text-primary px-5 py-2.5 rounded-full mb-8 border border-primary/20">
             <Sparkles className="w-5 h-5" />
