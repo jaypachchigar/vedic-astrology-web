@@ -238,15 +238,15 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
 
       {/* Main Tabs */}
       <Tabs defaultValue="chart" className="space-y-4 md:space-y-6">
-        <TabsList className="flex flex-wrap w-full gap-1 md:gap-2 bg-muted p-1 h-auto">
-          <TabsTrigger value="chart" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Chart</TabsTrigger>
-          <TabsTrigger value="planets" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Planets</TabsTrigger>
-          <TabsTrigger value="divisional" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Divisional</TabsTrigger>
-          <TabsTrigger value="dashas" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Dashas</TabsTrigger>
-          <TabsTrigger value="doshas" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Doshas</TabsTrigger>
-          <TabsTrigger value="gemstones" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Gems</TabsTrigger>
-          <TabsTrigger value="yearly" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Year</TabsTrigger>
-          <TabsTrigger value="monthly" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Monthly</TabsTrigger>
+        <TabsList className="flex flex-wrap w-full gap-1.5 md:gap-2 bg-muted p-2 md:p-2 h-auto">
+          <TabsTrigger value="chart" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Chart</TabsTrigger>
+          <TabsTrigger value="planets" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Planets</TabsTrigger>
+          <TabsTrigger value="divisional" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Divisional</TabsTrigger>
+          <TabsTrigger value="dashas" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Dashas</TabsTrigger>
+          <TabsTrigger value="doshas" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Doshas</TabsTrigger>
+          <TabsTrigger value="gemstones" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Gems</TabsTrigger>
+          <TabsTrigger value="yearly" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Year</TabsTrigger>
+          <TabsTrigger value="monthly" className="text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Monthly</TabsTrigger>
         </TabsList>
 
         {/* Birth Chart Tab */}

@@ -36,7 +36,12 @@ export function NorthIndianChart({ planets, ascendant }: NorthIndianChartProps) 
           color: '#d00',
           textAlign: 'center',
           wordWrap: 'break-word',
-          lineHeight: '1.3'
+          lineHeight: '1.3',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%'
         }}>
           {planetsList.join(', ')}
         </div>
