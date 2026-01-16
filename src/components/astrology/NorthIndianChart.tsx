@@ -29,19 +29,20 @@ export function NorthIndianChart({ planets, ascendant }: NorthIndianChartProps) 
     if (planetsList.length === 0) return null;
 
     return (
-      <foreignObject x={x - maxWidth/2} y={y - 10} width={maxWidth} height="90">
+      <foreignObject x={x - maxWidth/2} y={y} width={maxWidth} height="85">
         <div style={{
-          fontSize: '20px',
+          fontSize: '18px',
           fontWeight: '700',
           color: '#d00',
           textAlign: 'center',
           wordWrap: 'break-word',
-          lineHeight: '1.3',
+          lineHeight: '1.2',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',
-          height: '100%'
+          height: '100%',
+          padding: '2px'
         }}>
           {planetsList.join(', ')}
         </div>
@@ -70,7 +71,7 @@ export function NorthIndianChart({ planets, ascendant }: NorthIndianChartProps) 
         {/* HOUSE 1 - TOP (Ascendant is here) */}
         <text x="400" y="95" fontSize="24" fontWeight="bold" textAnchor="middle">H1</text>
         <text x="400" y="122" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant - 1) % 12]}</text>
-        {renderPlanets(1, 400, 158, 180)}
+        {renderPlanets(1, 400, 145, 180)}
 
         {/* HOUSE 2 - TOP LEFT TRIANGLE */}
         <text x="205" y="80" fontSize="24" fontWeight="bold" textAnchor="middle">H2</text>

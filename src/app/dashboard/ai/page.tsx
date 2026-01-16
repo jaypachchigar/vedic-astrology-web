@@ -137,30 +137,48 @@ export default function AIAssistantPage() {
 
   // Build birth chart context from loaded data
   const buildBirthChartContext = (): BirthChartContext | null => {
-    // If no user profile, can't build context
-    if (!userProfile) {
-      console.log('⚠️ No user profile found');
+    // If no user profile with birth details, return null
+    if (!userProfile || !userProfile.date_of_birth || !userProfile.time_of_birth) {
+      console.log('⚠️ No complete user profile found - missing birth details');
       return null;
     }
 
     // If we have birth chart data from database, use it
-    if (birthChartData && birthChartData.planets) {
+    if (birthChartData) {
       try {
+        console.log('📊 Building context from birth chart data:', birthChartData);
+
+        // Handle different possible data structures
+        const planets = birthChartData.planets || birthChartData.planetPositions?.planets || [];
+        const kundliData = birthChartData.kundli || birthChartData;
+        const advancedData = birthChartData.advancedKundli || birthChartData.dasha || {};
+
         // Extract Moon sign and nakshatra
-        const moonPlanet = birthChartData.planets?.find((p: any) => p.name === 'Moon' || p.full_name === 'Moon');
-        const moonSign = moonPlanet?.sign?.name || '';
-        const moonNakshatra = moonPlanet?.nakshatra?.name || '';
+        const moonPlanet = planets.find((p: any) =>
+          p.name === 'Moon' || p.full_name === 'Moon' || p.planet === 'Moon'
+        );
+        const moonSign = moonPlanet?.sign?.name || moonPlanet?.rashi || '';
+        const moonNakshatra = moonPlanet?.nakshatra?.name || moonPlanet?.nakshatra || '';
 
         // Extract Sun sign
-        const sunPlanet = birthChartData.planets?.find((p: any) => p.name === 'Sun' || p.full_name === 'Sun');
-        const sunSign = sunPlanet?.sign?.name || '';
+        const sunPlanet = planets.find((p: any) =>
+          p.name === 'Sun' || p.full_name === 'Sun' || p.planet === 'Sun'
+        );
+        const sunSign = sunPlanet?.sign?.name || sunPlanet?.rashi || '';
 
         // Extract Ascendant
-        const ascendant = birthChartData.ascendant?.sign?.name || birthChartData.planets?.find((p: any) => p.name === 'Ascendant')?.sign?.name || '';
+        const ascendant = kundliData.ascendant?.sign?.name ||
+                         birthChartData.ascendant?.sign?.name ||
+                         kundliData.lagna?.sign?.name || '';
 
-        // Extract Dasha
-        const mahaDasha = birthChartData.dasha?.maha_dasha?.planet || birthChartData.dasha?.current_maha_dasha?.planet || '';
-        const antarDasha = birthChartData.dasha?.antar_dasha?.planet || birthChartData.dasha?.current_antar_dasha?.planet || '';
+        // Extract Dasha - try multiple possible locations
+        const dashaData = advancedData.vimshottari_dasha || advancedData;
+        const mahaDasha = dashaData.maha_dasha?.planet ||
+                         dashaData.current_maha_dasha?.planet ||
+                         dashaData.mahaDasha || '';
+        const antarDasha = dashaData.antar_dasha?.planet ||
+                          dashaData.current_antar_dasha?.planet ||
+                          dashaData.antarDasha || '';
 
         const context: BirthChartContext = {
           moonSign,
@@ -169,14 +187,21 @@ export default function AIAssistantPage() {
           sunSign,
           mahaDasha,
           antarDasha,
-          dateOfBirth: userProfile.date_of_birth || birthChartData.date_of_birth || '',
-          timeOfBirth: userProfile.time_of_birth || birthChartData.time_of_birth || '',
-          latitude: userProfile.latitude || birthChartData.latitude || 0,
-          longitude: userProfile.longitude || birthChartData.longitude || 0,
-          planetPositions: birthChartData.planets || [],
-          houses: birthChartData.houses || [],
-          yogas: [], // Can be extracted if available
+          dateOfBirth: userProfile.date_of_birth || '',
+          timeOfBirth: userProfile.time_of_birth || '',
+          latitude: userProfile.latitude || 0,
+          longitude: userProfile.longitude || 0,
+          planetPositions: planets,
+          houses: birthChartData.houses || kundliData.houses || [],
+          yogas: birthChartData.yogas || [],
         };
+
+        console.log('✅ Built context:', {
+          moonSign: context.moonSign,
+          ascendant: context.ascendant,
+          mahaDasha: context.mahaDasha,
+          antarDasha: context.antarDasha
+        });
 
         console.log('📊 Built birth chart context from database:', context);
         return context;
