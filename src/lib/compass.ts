@@ -32,7 +32,7 @@ class CompassService {
 
   private calibration: CompassCalibration | null = null;
   private smoothingBuffer: number[] = [];
-  private readonly SMOOTHING_WINDOW = 5;
+  private readonly SMOOTHING_WINDOW = 3;
 
   /**
    * Request permission for device sensors (iOS requirement)
@@ -177,32 +177,36 @@ class CompassService {
     // beta: rotation around x-axis (-180 to 180 degrees)
     // gamma: rotation around y-axis (-90 to 90 degrees)
 
-    const alpha = event.alpha; // Compass heading
+    const alpha = event.alpha;
     const beta = event.beta;
     const gamma = event.gamma;
     const absolute = (event as any).absolute || false;
 
-    if (alpha === null) {
-      console.warn('Compass data not available');
+    // Check for iOS webkitCompassHeading (more reliable on iOS)
+    const webkitHeading = (event as any).webkitCompassHeading;
+
+    let magneticHeading: number;
+
+    if (webkitHeading !== undefined && webkitHeading !== null) {
+      // iOS provides direct compass heading (0-360, where 0 is north)
+      magneticHeading = webkitHeading;
+      console.log('Using iOS webkitCompassHeading:', magneticHeading);
+    } else if (alpha !== null) {
+      // Android/other browsers use alpha
+      // Alpha represents the rotation around the Z-axis (0-360)
+      // 0 degrees = North, 90 = East, 180 = South, 270 = West
+
+      // Use alpha directly as it already represents compass heading
+      magneticHeading = alpha;
+
+      // Normalize to 0-360
+      magneticHeading = this.normalizeHeading(magneticHeading);
+
+      console.log('Using alpha:', magneticHeading);
+    } else {
+      console.warn('No compass data available');
       return;
     }
-
-    // Calculate magnetic heading
-    // For most devices, alpha gives heading relative to magnetic north
-    // We need to normalize it to 0-360 range
-    let magneticHeading = alpha;
-
-    // Adjust for device orientation
-    // If device is held vertically (portrait mode), use alpha directly
-    // If device is tilted, we need to compensate using beta and gamma
-    if (beta !== null && gamma !== null) {
-      // Apply tilt compensation (simplified)
-      const tiltFactor = Math.cos((beta * Math.PI) / 180);
-      magneticHeading = alpha * tiltFactor;
-    }
-
-    // Normalize to 0-360
-    magneticHeading = this.normalizeHeading(magneticHeading);
 
     // Apply magnetic declination to get true north
     const trueHeading = this.calibration
@@ -212,8 +216,13 @@ class CompassService {
     // Apply smoothing
     const smoothedHeading = this.smoothHeading(trueHeading);
 
-    // Determine accuracy based on absolute positioning
-    const accuracy = absolute ? 5 : 15; // Absolute positioning is more accurate
+    // Determine accuracy based on absolute positioning and device type
+    let accuracy = 15;
+    if (webkitHeading !== undefined) {
+      accuracy = 5; // iOS webkit compass is more accurate
+    } else if (absolute) {
+      accuracy = 10; // Absolute positioning is fairly accurate
+    }
 
     // Create reading
     const reading: CompassReading = {
