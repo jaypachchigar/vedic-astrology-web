@@ -38,8 +38,12 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get profile
-      const profile = await getUserProfile();
+      // Get profile - try direct DB query first
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
 
       let name = "";
       if (profile?.full_name) {
