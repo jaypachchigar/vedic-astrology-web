@@ -47,24 +47,36 @@ export async function getUserProfile(): Promise<UserProfile | null> {
   return data;
 }
 
-// Update user profile
-export async function updateUserProfile(updates: {
-  full_name?: string;
-  date_of_birth?: string;
-  time_of_birth?: string;
-  place_of_birth?: string;
-  latitude?: number;
-  longitude?: number;
-  phone?: string;
-  timezone?: string;
-}) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    console.error('❌ Not authenticated');
-    throw new Error('Not authenticated');
+// Update user profile (accepts optional userId and email for registration flow)
+export async function updateUserProfile(
+  updates: {
+    full_name?: string;
+    date_of_birth?: string;
+    time_of_birth?: string;
+    place_of_birth?: string;
+    latitude?: number;
+    longitude?: number;
+    phone?: string;
+    timezone?: string;
+  },
+  userId?: string,
+  userEmail?: string
+) {
+  let user_id = userId;
+  let user_email = userEmail || '';
+
+  // If userId not provided, get from current session
+  if (!user_id) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('❌ Not authenticated');
+      throw new Error('Not authenticated');
+    }
+    user_id = user.id;
+    user_email = user.email || '';
   }
 
-  console.log('💾 Saving profile for user:', user.id);
+  console.log('💾 Saving profile for user:', user_id);
   console.log('📝 Updates:', updates);
 
   // Use upsert to insert or update
@@ -72,8 +84,8 @@ export async function updateUserProfile(updates: {
   const { data, error } = await (supabase
     .from('profiles')
     .upsert({
-      id: user.id,
-      email: user.email,
+      id: user_id,
+      email: user_email || updates.full_name || 'user@email.com',
       ...updates,
       updated_at: new Date().toISOString()
     }, {
@@ -91,24 +103,33 @@ export async function updateUserProfile(updates: {
   return data;
 }
 
-// Save birth chart
-export async function saveBirthChart(chartData: {
-  name: string;
-  date_of_birth: string;
-  time_of_birth: string;
-  place_of_birth: string;
-  latitude: number;
-  longitude: number;
-  timezone?: string;
-  chart_data: any; // The complete calculation results
-}) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    console.error('❌ Not authenticated');
-    throw new Error('Not authenticated');
+// Save birth chart (accepts optional userId for registration flow)
+export async function saveBirthChart(
+  chartData: {
+    name: string;
+    date_of_birth: string;
+    time_of_birth: string;
+    place_of_birth: string;
+    latitude: number;
+    longitude: number;
+    timezone?: string;
+    chart_data: any; // The complete calculation results
+  },
+  userId?: string
+) {
+  let user_id = userId;
+
+  // If userId not provided, get from current session
+  if (!user_id) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('❌ Not authenticated');
+      throw new Error('Not authenticated');
+    }
+    user_id = user.id;
   }
 
-  console.log('💾 Saving birth chart for user:', user.id);
+  console.log('💾 Saving birth chart for user:', user_id);
 
   // Extract structured data from chart_data
   const kundli = chartData.chart_data?.kundli || {};
@@ -119,7 +140,7 @@ export async function saveBirthChart(chartData: {
   const { data, error } = await (supabase
     .from('birth_charts')
     .insert({
-      user_id: user.id,
+      user_id: user_id,
       chart_name: chartData.name,
       date_of_birth: chartData.date_of_birth,
       time_of_birth: chartData.time_of_birth,

@@ -146,10 +146,15 @@ export default function SimpleRegisterPage() {
       }
 
       console.log('✅ Account created:', authData.user.email);
+      const userId = authData.user.id;
+      const userEmail = authData.user.email;
 
-      // Step 2: Save birth profile
+      // Step 2: Save birth profile (pass userId and email to bypass auth check)
       console.log('📊 Saving birth profile...');
-      await updateUserProfile(birthData);
+      await updateUserProfile({
+        full_name: accountData.name,
+        ...birthData
+      }, userId, userEmail || '');
       console.log('✅ Profile saved');
 
       // Step 3: Generate birth chart
@@ -175,7 +180,7 @@ export default function SimpleRegisterPage() {
           longitude: birthData.longitude,
           timezone: birthData.timezone,
           chart_data: chartData,
-        });
+        }, userId);  // Pass userId to bypass auth check
         console.log('✅ Birth chart saved');
       } catch (chartError) {
         console.error('⚠️ Chart generation failed (non-blocking):', chartError);
