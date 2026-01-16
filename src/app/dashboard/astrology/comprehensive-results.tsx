@@ -175,13 +175,7 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
   }
 
   return (
-    <>
-      <style jsx>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-      <div className="max-w-7xl mx-auto space-y-6 px-2 md:px-4 pb-20 md:pb-6">
+    <div className="max-w-7xl mx-auto space-y-6 px-2 md:px-4 pb-20 md:pb-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
@@ -244,18 +238,16 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
 
       {/* Main Tabs */}
       <Tabs defaultValue="chart" className="space-y-4 md:space-y-6">
-        <div className="overflow-x-auto hide-scrollbar -mx-2 md:mx-0 px-2 md:px-0 pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-          <TabsList className="inline-flex w-auto min-w-full flex-nowrap gap-1.5 md:gap-2 bg-muted p-1">
-            <TabsTrigger value="chart" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Chart</TabsTrigger>
-            <TabsTrigger value="planets" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Planets</TabsTrigger>
-            <TabsTrigger value="divisional" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Divisional</TabsTrigger>
-            <TabsTrigger value="dashas" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Dashas</TabsTrigger>
-            <TabsTrigger value="doshas" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Doshas</TabsTrigger>
-            <TabsTrigger value="gemstones" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Gems</TabsTrigger>
-            <TabsTrigger value="yearly" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Year</TabsTrigger>
-            <TabsTrigger value="monthly" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Monthly</TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="flex flex-wrap w-full gap-1 md:gap-2 bg-muted p-1 h-auto">
+          <TabsTrigger value="chart" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Chart</TabsTrigger>
+          <TabsTrigger value="planets" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Planets</TabsTrigger>
+          <TabsTrigger value="divisional" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Divisional</TabsTrigger>
+          <TabsTrigger value="dashas" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Dashas</TabsTrigger>
+          <TabsTrigger value="doshas" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Doshas</TabsTrigger>
+          <TabsTrigger value="gemstones" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Gems</TabsTrigger>
+          <TabsTrigger value="yearly" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Year</TabsTrigger>
+          <TabsTrigger value="monthly" className="text-[11px] md:text-sm px-3 md:px-4 py-1.5 md:py-2">Monthly</TabsTrigger>
+        </TabsList>
 
         {/* Birth Chart Tab */}
         <TabsContent value="chart" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
@@ -264,7 +256,7 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
               <CardTitle className="text-lg md:text-xl">D1 Chart (Rasi/Lagna Chart)</CardTitle>
               <CardDescription className="text-xs md:text-sm">Your primary birth chart showing planetary positions</CardDescription>
             </CardHeader>
-            <CardContent className="p-2 md:p-6">
+            <CardContent className="p-1 md:p-6 overflow-hidden">
               {planets.length > 0 && kundli.ascendant ? (
                 <NorthIndianChart
                   planets={planets.map((p: any) => ({
@@ -1088,7 +1080,6 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
           )}
         </TabsContent>
       </Tabs>
-      </div>
-    </>
+    </div>
   );
 }

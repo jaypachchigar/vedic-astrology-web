@@ -116,6 +116,7 @@ export default function VastuPage() {
   const initializeCompass = async () => {
     // Check if compass is supported
     if (!compassService.isSupported()) {
+      console.log('Compass not supported on this device');
       setHasPermission(false);
       return;
     }
@@ -141,12 +142,13 @@ export default function VastuPage() {
       // Continue without calibration
     }
 
-    // Check if permission is needed (iOS)
-    const supported = typeof (DeviceOrientationEvent as any).requestPermission === 'function';
+    // Check if permission is needed (iOS 13+)
+    const needsPermission = typeof (DeviceOrientationEvent as any).requestPermission === 'function';
 
-    if (supported) {
+    if (needsPermission) {
       setHasPermission(false);
     } else {
+      // Android or older iOS - start compass directly
       setHasPermission(true);
       startCompass();
     }
@@ -288,18 +290,22 @@ export default function VastuPage() {
               <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 w-full max-w-md">
                 <div className="flex items-start space-x-3">
                   <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium">Compass Permission Required</p>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Compass Feature</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Allow access to device orientation to use the compass feature
+                      {compassService.isSupported()
+                        ? "Allow access to device orientation to use the compass feature. This works best on mobile devices."
+                        : "Compass is not supported on this device or browser. Please use the manual direction selector below or try on a mobile device."}
                     </p>
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      onClick={requestPermission}
-                    >
-                      Enable Compass
-                    </Button>
+                    {compassService.isSupported() && (
+                      <Button
+                        size="sm"
+                        className="mt-3"
+                        onClick={requestPermission}
+                      >
+                        Enable Compass
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

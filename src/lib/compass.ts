@@ -70,8 +70,7 @@ class CompassService {
   isSupported(): boolean {
     return (
       typeof window !== 'undefined' &&
-      'DeviceOrientationEvent' in window &&
-      'ondeviceorientationabsolute' in window
+      'DeviceOrientationEvent' in window
     );
   }
 

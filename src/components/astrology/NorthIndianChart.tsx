@@ -45,8 +45,8 @@ export function NorthIndianChart({ planets, ascendant }: NorthIndianChartProps) 
   };
 
   return (
-    <div className="w-full mx-auto p-2 md:p-4">
-      <svg viewBox="0 0 800 800" className="w-full h-auto aspect-square bg-white border-2 md:border-4 border-black rounded-lg">
+    <div className="w-full mx-auto px-0 py-2 md:p-4">
+      <svg viewBox="0 0 800 800" className="w-full h-auto aspect-square bg-white border-2 md:border-4 border-black rounded-lg max-w-full">
 
         {/* Main square border */}
         <rect x="10" y="10" width="780" height="780" fill="none" stroke="#000" strokeWidth="4" />
