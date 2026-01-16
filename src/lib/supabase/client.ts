@@ -1,16 +1,41 @@
 import { createBrowserClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+// Get environment variables with fallbacks
+const getSupabaseUrl = () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
+  }
+  return url;
+};
+
+const getSupabaseAnonKey = () => {
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!key) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
+  }
+  return key;
+};
 
 export function createClient() {
   return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    getSupabaseUrl(),
+    getSupabaseAnonKey()
   );
 }
 
-// Simple client for client components (alternative approach)
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+// Lazy initialization for simple client (only created when first accessed)
+let supabaseInstance: ReturnType<typeof createSupabaseClient> | null = null;
 
-export const supabase = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
+  get(target, prop) {
+    if (!supabaseInstance) {
+      supabaseInstance = createSupabaseClient(
+        getSupabaseUrl(),
+        getSupabaseAnonKey()
+      );
+    }
+    return (supabaseInstance as any)[prop];
+  }
+});
