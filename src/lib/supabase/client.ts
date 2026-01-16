@@ -1,9 +1,13 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-// Get environment variables with fallbacks
+// Get environment variables with build-time safety
 const getSupabaseUrl = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // During build, use placeholder if not set
+  if (!url && typeof window === 'undefined') {
+    return 'https://placeholder.supabase.co';
+  }
   if (!url) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
   }
@@ -12,6 +16,10 @@ const getSupabaseUrl = () => {
 
 const getSupabaseAnonKey = () => {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // During build, use placeholder if not set
+  if (!key && typeof window === 'undefined') {
+    return 'placeholder-key';
+  }
   if (!key) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable');
   }
@@ -25,17 +33,21 @@ export function createClient() {
   );
 }
 
-// Lazy initialization for simple client (only created when first accessed)
+// Simple client for client components - lazy initialization
 let supabaseInstance: ReturnType<typeof createSupabaseClient> | null = null;
+
+function getSupabaseInstance() {
+  if (!supabaseInstance) {
+    supabaseInstance = createSupabaseClient(
+      getSupabaseUrl(),
+      getSupabaseAnonKey()
+    );
+  }
+  return supabaseInstance;
+}
 
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(target, prop) {
-    if (!supabaseInstance) {
-      supabaseInstance = createSupabaseClient(
-        getSupabaseUrl(),
-        getSupabaseAnonKey()
-      );
-    }
-    return (supabaseInstance as any)[prop];
+    return (getSupabaseInstance() as any)[prop];
   }
 });
