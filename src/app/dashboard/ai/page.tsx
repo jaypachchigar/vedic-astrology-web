@@ -330,9 +330,9 @@ export default function AIAssistantPage() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-[1fr_300px] gap-6 min-h-[600px]">
+      <div className="grid md:grid-cols-[1fr_300px] gap-6 md:min-h-[600px]">
         {/* Chat Area */}
-        <Card className="flex flex-col h-[600px] border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
+        <Card className="flex flex-col h-[calc(100vh-250px)] md:h-[600px] border-primary/20 bg-gradient-to-br from-card via-card to-primary/5">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">

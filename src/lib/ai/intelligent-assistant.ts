@@ -269,15 +269,16 @@ class IntelligentAssistant {
 
     const parts: string[] = [];
 
-    // Opening with personalization
-    parts.push(`Based on your complete birth chart analysis:\n`);
+    // Opening with personalization - sound like a real astrologer
+    parts.push(`Namaste 🙏\n`);
+    parts.push(`Let me analyze your question through the sacred lens of Vedic astrology...\n`);
 
     // Include relevant birth chart details
-    parts.push(`🌙 **Your Cosmic Blueprint:**`);
-    parts.push(`- Moon Sign (Rashi): ${context.moonSign}`);
-    parts.push(`- Nakshatra: ${context.moonNakshatra}`);
-    parts.push(`- Ascendant (Lagna): ${context.ascendant}`);
-    parts.push(`- Current Dasha: ${context.mahaDasha} Maha Dasha → ${context.antarDasha} Antar Dasha\n`);
+    parts.push(`📊 **Your Birth Chart Configuration:**`);
+    parts.push(`• Moon Sign (Chandra Rashi): ${context.moonSign}`);
+    parts.push(`• Birth Nakshatra: ${context.moonNakshatra}`);
+    parts.push(`• Ascendant (Lagna): ${context.ascendant}`);
+    parts.push(`• Current Dasha Period: ${context.mahaDasha} Maha Dasha → ${context.antarDasha} Antar Dasha\n`);
 
     // Category-specific analysis
     switch (category) {
@@ -310,16 +311,21 @@ class IntelligentAssistant {
     }
 
     // Always include current dasha influence
-    parts.push(`\n🔮 **Current Dasha Influence:**`);
+    parts.push(`\n🪐 **Current Planetary Period Analysis:**`);
     parts.push(this.getDashaInfluence(context));
 
     // Actionable guidance
-    parts.push(`\n✨ **Actionable Guidance:**`);
+    parts.push(`\n💫 **Practical Guidance Based on Your Chart:**`);
     parts.push(this.getActionableGuidance(context, category));
 
     // Remedies
-    parts.push(`\n🙏 **Recommended Remedies:**`);
+    parts.push(`\n🙏 **Vedic Remedies & Upaya:**`);
     parts.push(this.getSpecificRemedies(context, category));
+
+    // Closing like a real astrologer
+    parts.push(`\n---`);
+    parts.push(`*This analysis is based on traditional Vedic astrology principles and your unique birth chart. Remember, the planets incline but do not compel - you always have free will to shape your destiny.*\n`);
+    parts.push(`May the divine grace guide you on your path. Om Shanti. 🙏✨`);
 
     return parts.join('\n');
   }
@@ -448,12 +454,32 @@ ${this.getGemstoneGuidance(context)}`;
   }
 
   private getGeneralAnalysis(context: BirthChartContext, question: string): string {
-    return `🔍 **Comprehensive Analysis:**
-Let me analyze your question in the context of your complete birth chart.
+    // Provide a thoughtful, conversational response like a real astrologer
+    const lowerQuestion = question.toLowerCase();
+
+    // Detect if it's a simple greeting or basic question
+    if (lowerQuestion.match(/^(hi|hello|hey|namaste|good)/)) {
+      return `🙏 **Astrological Insight:**
+Thank you for reaching out. I'm here to guide you through the wisdom of Vedic astrology.
+
+**About Your Chart:**
+With ${context.moonSign} as your Moon sign (Chandra Rashi) and ${context.ascendant} Ascendant, your emotional nature and life approach are beautifully balanced. Your birth Nakshatra ${context.moonNakshatra} adds unique qualities to your personality and destiny.
+
+Currently, you're experiencing the ${context.mahaDasha} Maha Dasha with ${context.antarDasha} Antar Dasha period, which brings specific energies and opportunities into your life.
+
+Feel free to ask me anything about your career, relationships, health, timing, or any other aspect of your life. I'm here to provide guidance based on your unique astrological blueprint.`;
+    }
+
+    return `🔍 **Astrological Analysis:**
+Let me examine your question through the lens of your birth chart...
 
 ${this.getContextualAnalysis(context, question)}
 
-Your current planetary period (${context.mahaDasha}-${context.antarDasha}) suggests this is ${this.getPeriodNature(context)} time for such matters.`;
+**Current Planetary Influence:**
+You're in the ${context.mahaDasha} Maha Dasha period, combined with ${context.antarDasha} Antar Dasha. This planetary period ${this.getPeriodNature(context)} for the matters you're asking about.
+
+**Your Chart's Perspective:**
+With ${context.moonSign} Moon and ${context.ascendant} Ascendant, your approach to this situation is influenced by ${this.getMoonAscendantCombination(context.moonSign, context.ascendant)}.`;
   }
 
   // Helper methods for generating specific content
@@ -859,6 +885,10 @@ Once your chart is generated (takes about 10 seconds), come back here and ask yo
   private getContextualAnalysis(context: BirthChartContext, question: string): string { return 'Based on your unique chart configuration...'; }
   private getPeriodNature(context: BirthChartContext): string { return 'a favorable'; }
   private getLuckyDay(nakshatra: string): string { return 'Thursday'; }
+
+  private getMoonAscendantCombination(moonSign: string, ascendant: string): string {
+    return `the emotional sensitivity of ${moonSign} combined with the outward expression of ${ascendant}. This creates a unique blend where your inner feelings and outer persona work together to shape your life experiences.`;
+  }
 
   /**
    * Store conversation for learning
