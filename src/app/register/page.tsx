@@ -149,17 +149,10 @@ export default function SimpleRegisterPage() {
       const userId = authData.user.id;
       const userEmail = authData.user.email;
 
-      // Step 2: Save birth profile (pass userId and email to bypass auth check)
-      console.log('📊 Saving birth profile...');
-      await updateUserProfile({
-        full_name: accountData.name,
-        ...birthData
-      }, userId, userEmail || '');
-      console.log('✅ Profile saved');
-
-      // Step 3: Generate birth chart
-      console.log('🌟 Generating birth chart...');
+      // Step 2 & 3: Save profile and birth chart via API (bypasses auth issues)
+      console.log('📊 Saving profile and generating birth chart...');
       try {
+        // Generate birth chart first
         const apiDetails = convertToAPIFormat({
           dateOfBirth: birthData.date_of_birth,
           timeOfBirth: birthData.time_of_birth,
@@ -168,22 +161,45 @@ export default function SimpleRegisterPage() {
           timezone: birthData.timezone,
         });
 
-        const chartData = await getCompleteBirthChart(apiDetails);
+        const calculatedChart = await getCompleteBirthChart(apiDetails);
         console.log('✅ Birth chart calculated');
 
-        await saveBirthChart({
-          name: accountData.name,
-          date_of_birth: birthData.date_of_birth,
-          time_of_birth: birthData.time_of_birth,
-          place_of_birth: birthData.place_of_birth,
-          latitude: birthData.latitude,
-          longitude: birthData.longitude,
-          timezone: birthData.timezone,
-          chart_data: chartData,
-        }, userId);  // Pass userId to bypass auth check
-        console.log('✅ Birth chart saved');
-      } catch (chartError) {
-        console.error('⚠️ Chart generation failed (non-blocking):', chartError);
+        // Save everything via server API (bypasses 401 auth errors)
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            userEmail,
+            profileData: {
+              full_name: accountData.name,
+              ...birthData
+            },
+            chartData: {
+              chart_name: accountData.name,
+              date_of_birth: birthData.date_of_birth,
+              time_of_birth: birthData.time_of_birth,
+              place_of_birth: birthData.place_of_birth,
+              latitude: birthData.latitude,
+              longitude: birthData.longitude,
+              timezone: birthData.timezone,
+              ascendant: calculatedChart.kundli?.ascendant || null,
+              planets: calculatedChart.planetPositions?.planets || null,
+              houses: calculatedChart.kundli?.houses || null,
+              dasha: calculatedChart.advancedKundli?.vimshottari_dasha || null,
+              doshas: calculatedChart.advancedKundli?.doshas || null,
+              is_primary: false,
+            }
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save profile');
+        }
+
+        console.log('✅ Profile and birth chart saved');
+      } catch (saveError) {
+        console.error('⚠️ Save failed (non-blocking):', saveError);
       }
 
       console.log('🎉 Registration complete!');
