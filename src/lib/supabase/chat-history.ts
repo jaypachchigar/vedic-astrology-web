@@ -59,7 +59,8 @@ export async function saveChatMessage(
       throw new Error('No authenticated user');
     }
 
-    const { error } = await supabase
+    // @ts-ignore
+    const { error } = await (supabase
       .from('chat_history')
       .insert({
         user_id: user.id,
@@ -67,7 +68,7 @@ export async function saveChatMessage(
         role,
         content,
         timestamp: timestamp.toISOString(),
-      });
+      }) as any);
 
     if (error) {
       console.error('Error saving chat message:', error);

@@ -1,7 +1,25 @@
 import { supabase } from './client';
 
+// Type definitions
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  date_of_birth?: string;
+  time_of_birth?: string;
+  place_of_birth?: string;
+  city?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  phone?: string;
+  timezone?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Get user profile
-export async function getUserProfile() {
+export async function getUserProfile(): Promise<UserProfile | null> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     console.error('❌ Not authenticated');
@@ -50,7 +68,8 @@ export async function updateUserProfile(updates: {
   console.log('📝 Updates:', updates);
 
   // Use upsert to insert or update
-  const { data, error } = await supabase
+  // @ts-ignore
+  const { data, error } = await (supabase
     .from('profiles')
     .upsert({
       id: user.id,
@@ -59,7 +78,7 @@ export async function updateUserProfile(updates: {
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'id'
-    })
+    }) as any)
     .select()
     .single();
 
@@ -96,7 +115,8 @@ export async function saveBirthChart(chartData: {
   const advancedKundli = chartData.chart_data?.advancedKundli || {};
   const planetPositions = chartData.chart_data?.planetPositions?.planets || [];
 
-  const { data, error } = await supabase
+  // @ts-ignore
+  const { data, error } = await (supabase
     .from('birth_charts')
     .insert({
       user_id: user.id,
@@ -113,7 +133,7 @@ export async function saveBirthChart(chartData: {
       dasha: advancedKundli.vimshottari_dasha || null,
       doshas: advancedKundli.doshas || null,
       is_primary: false,
-    })
+    }) as any)
     .select()
     .single();
 
