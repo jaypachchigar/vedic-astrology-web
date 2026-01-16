@@ -175,18 +175,24 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6 px-4">
+    <>
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+      <div className="max-w-7xl mx-auto space-y-6 px-2 md:px-4 pb-20 md:pb-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
+          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
             Complete Vedic Astrology Report
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm md:text-base text-muted-foreground mt-2">
             Comprehensive analysis for {birthData.name}
           </p>
         </div>
-        <Button variant="outline" onClick={onEdit}>
+        <Button variant="outline" onClick={onEdit} size="sm" className="md:h-10">
           Edit Details
         </Button>
       </div>
@@ -209,8 +215,8 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
       )}
 
       {/* Birth Details Card */}
-      <GlassCard variant="primary" className="p-6">
-        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4 text-sm">
+      <GlassCard variant="primary" className="p-4 md:p-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 text-xs md:text-sm">
           <div>
             <p className="text-muted-foreground mb-1">Date of Birth</p>
             <p className="font-semibold">{new Date(birthData.dateOfBirth).toLocaleDateString()}</p>
@@ -237,26 +243,28 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
       </GlassCard>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="chart" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 xl:grid-cols-8 gap-2">
-          <TabsTrigger value="chart">Birth Chart</TabsTrigger>
-          <TabsTrigger value="planets">Planets</TabsTrigger>
-          <TabsTrigger value="divisional">Divisional Charts</TabsTrigger>
-          <TabsTrigger value="dashas">Dashas</TabsTrigger>
-          <TabsTrigger value="doshas">Doshas & Yogas</TabsTrigger>
-          <TabsTrigger value="gemstones">Gemstones</TabsTrigger>
-          <TabsTrigger value="yearly">Year {new Date().getFullYear()}</TabsTrigger>
-          <TabsTrigger value="monthly">Monthly</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="chart" className="space-y-4 md:space-y-6">
+        <div className="overflow-x-auto hide-scrollbar -mx-2 md:mx-0 px-2 md:px-0 pb-3" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <TabsList className="inline-flex w-auto min-w-full flex-nowrap gap-1.5 md:gap-2 bg-muted p-1">
+            <TabsTrigger value="chart" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Chart</TabsTrigger>
+            <TabsTrigger value="planets" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Planets</TabsTrigger>
+            <TabsTrigger value="divisional" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Divisional</TabsTrigger>
+            <TabsTrigger value="dashas" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Dashas</TabsTrigger>
+            <TabsTrigger value="doshas" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Doshas</TabsTrigger>
+            <TabsTrigger value="gemstones" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Gems</TabsTrigger>
+            <TabsTrigger value="yearly" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Year</TabsTrigger>
+            <TabsTrigger value="monthly" className="flex-shrink-0 text-[11px] md:text-sm px-2.5 md:px-4 py-1.5 md:py-2">Monthly</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Birth Chart Tab */}
-        <TabsContent value="chart" className="space-y-6">
+        <TabsContent value="chart" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>D1 Chart (Rasi/Lagna Chart)</CardTitle>
-              <CardDescription>Your primary birth chart showing planetary positions</CardDescription>
+            <CardHeader className="p-4 md:p-6">
+              <CardTitle className="text-lg md:text-xl">D1 Chart (Rasi/Lagna Chart)</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Your primary birth chart showing planetary positions</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-2 md:p-6">
               {planets.length > 0 && kundli.ascendant ? (
                 <NorthIndianChart
                   planets={planets.map((p: any) => ({
@@ -278,13 +286,13 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
             </CardContent>
           </Card>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Ascendant (Lagna)</CardTitle>
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-base md:text-lg">Ascendant (Lagna)</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-primary/10 rounded-lg">
+              <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
+                <div className="p-3 md:p-4 bg-primary/10 rounded-lg">
                   {kundli.ascendant ? (
                     <>
                       <p className="text-2xl font-bold text-primary">
@@ -310,11 +318,11 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
             </Card>
 
             <Card>
-              <CardHeader>
-                <CardTitle>Moon Sign (Rashi)</CardTitle>
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-base md:text-lg">Moon Sign (Rashi)</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="p-4 bg-gold/10 rounded-lg">
+              <CardContent className="p-4 md:p-6 pt-0 md:pt-0">
+                <div className="p-3 md:p-4 bg-gold/10 rounded-lg">
                   {planets.find((p: any) => p.name === 'Moon') ? (
                     <>
                       <p className="text-2xl font-bold text-gold">
@@ -347,14 +355,14 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
         </TabsContent>
 
         {/* Planets Tab */}
-        <TabsContent value="planets" className="space-y-6">
+        <TabsContent value="planets" className="space-y-4 md:space-y-6 mt-4 md:mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Planetary Positions</CardTitle>
-              <CardDescription>All planets (Grahas) in your birth chart with precise degrees</CardDescription>
+            <CardHeader className="p-4 md:p-6">
+              <CardTitle className="text-lg md:text-xl">Planetary Positions</CardTitle>
+              <CardDescription className="text-xs md:text-sm">All planets (Grahas) in your birth chart with precise degrees</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
+            <CardContent className="p-2 md:p-6">
+              <div className="space-y-3 md:space-y-2">
                 {planets.length > 0 ? (
                   planets.map((planet: any) => {
                     const getNature = (name: string) => {
@@ -365,11 +373,11 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
                     };
 
                     return (
-                      <div key={planet.id} className="p-5 rounded-xl border border-border bg-gradient-to-br from-card to-accent/5 hover:shadow-md transition-all">
-                        <div className="flex items-start justify-between mb-3">
+                      <div key={planet.id} className="p-3 md:p-5 rounded-xl border border-border bg-gradient-to-br from-card to-accent/5 hover:shadow-md transition-all">
+                        <div className="flex items-start justify-between mb-2 md:mb-3">
                           <div className="flex-1">
-                            <div className="flex items-center flex-wrap gap-2">
-                              <h3 className="font-bold text-lg">
+                            <div className="flex items-center flex-wrap gap-1 md:gap-2">
+                              <h3 className="font-bold text-base md:text-lg">
                                 {planet.name}
                               </h3>
                               <span className="text-xs text-muted-foreground">
@@ -395,20 +403,20 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
                               )}
                             </div>
                           </div>
-                          <div className="text-right ml-4 flex flex-col items-end">
-                            <p className="font-mono text-xl font-bold bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">
+                          <div className="text-right ml-2 md:ml-4 flex flex-col items-end">
+                            <p className="font-mono text-base md:text-xl font-bold bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">
                               {planet.local_degree?.toFixed(2)}°
                             </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
+                            <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5">
                               in {planet.sign?.name}
                             </p>
-                            <p className="font-mono text-xs text-muted-foreground mt-1">
+                            <p className="font-mono text-[10px] md:text-xs text-muted-foreground mt-0.5 md:mt-1">
                               Speed: {planet.speed?.toFixed(2)}°/day
                             </p>
                           </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4 mb-3">
+                        <div className="grid md:grid-cols-2 gap-2 md:gap-4 mb-2 md:mb-3">
                           {/* Rasi (D1) Information */}
                           <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
                             <p className="text-xs font-semibold text-primary mb-2">D1 - Rasi (Birth Chart)</p>
@@ -1080,6 +1088,7 @@ export function ComprehensiveResults({ birthData, onEdit }: ComprehensiveResults
           )}
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 }

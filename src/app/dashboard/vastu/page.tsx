@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Compass, MapPin, Home, Sparkles, AlertCircle, Target } from "lucide-react";
 import { compassService, getVastuDirection, type CompassReading } from "@/lib/compass";
-import { getUserProfile } from "@/lib/supabase/birth-charts";
+import { supabase } from "@/lib/supabase/client";
 
 type Direction = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW";
 
@@ -121,12 +121,24 @@ export default function VastuPage() {
     }
 
     // Load user profile for location-based calibration
-    const profile = await getUserProfile();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('latitude, longitude')
+          .eq('id', user.id)
+          .maybeSingle();
 
-    if (profile && profile.latitude && profile.longitude) {
-      setIsCalibrating(true);
-      await compassService.setCalibration(profile.latitude, profile.longitude);
-      setIsCalibrating(false);
+        if (profile && profile.latitude && profile.longitude) {
+          setIsCalibrating(true);
+          await compassService.setCalibration(profile.latitude, profile.longitude);
+          setIsCalibrating(false);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading profile for compass calibration:', error);
+      // Continue without calibration
     }
 
     // Check if permission is needed (iOS)

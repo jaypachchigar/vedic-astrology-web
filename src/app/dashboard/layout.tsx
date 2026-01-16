@@ -44,10 +44,10 @@ export default function DashboardLayout({
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-purple/5">
       {/* Top Navigation */}
       <header className="sticky top-0 z-50 w-full border-b border-primary/20 backdrop-blur-md bg-background/90">
-        <div className="max-w-7xl mx-auto flex h-16 items-center px-4">
-          <Link href="/dashboard" className="flex items-center space-x-3">
+        <div className="max-w-7xl mx-auto flex h-16 items-center px-3 md:px-4">
+          <Link href="/dashboard" className="flex items-center space-x-2 md:space-x-3">
             <VedicLogo size="md" animated />
-            <span className="text-xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
+            <span className="hidden sm:inline text-base md:text-xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
               Vedic Astrology
             </span>
           </Link>
@@ -135,23 +135,32 @@ export default function DashboardLayout({
       </div>
 
       {/* Mobile Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border backdrop-blur-md bg-background/90 md:hidden shadow-lg">
-        <div className="grid grid-cols-5 gap-1 p-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border backdrop-blur-md bg-background/95 md:hidden shadow-lg safe-area-bottom">
+        <div className="grid grid-cols-5 gap-0 px-0.5 py-1.5 pb-safe">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
+            // Get mobile-friendly label
+            const getMobileLabel = (name: string) => {
+              if (name === "Birth Chart") return "Birth\nChart";
+              if (name === "AI Assistant") return "AI\nChat";
+              return name;
+            };
+
             return (
               <Link
                 key={item.name}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center space-y-1 rounded-lg p-2 transition-all",
+                  "flex flex-col items-center justify-center gap-0.5 rounded-lg p-1.5 transition-all min-h-[56px]",
                   isActive
                     ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:bg-accent"
+                    : "text-muted-foreground active:bg-accent"
                 )}
               >
-                <item.icon className="w-6 h-6" />
-                <span className="text-xs">{item.name}</span>
+                <item.icon className={cn("w-[18px] h-[18px] flex-shrink-0", isActive && "animate-pulse")} />
+                <span className="text-[9px] font-medium leading-[1.1] text-center whitespace-pre-line">
+                  {getMobileLabel(item.name)}
+                </span>
               </Link>
             );
           })}
