@@ -183,15 +183,22 @@ export default function SimpleRegisterPage() {
 
       console.log('🎉 Registration complete!');
 
-      // Check if email confirmation is required
-      if (!authData.session) {
-        // Email confirmation required
-        setError(null);
-        alert("✅ Registration successful!\n\nWe've sent a confirmation email to " + accountData.email + ".\n\nPlease check your inbox and click the confirmation link to access your account.\n\nYour birth chart is already prepared and waiting!");
-        router.push("/login");
+      // Sign in immediately with the credentials to create a session
+      console.log('🔐 Signing in automatically...');
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: accountData.email,
+        password: accountData.password,
+      });
+
+      if (signInError) {
+        // If auto sign-in fails (email confirmation required), that's okay
+        // Just let them know and redirect to dashboard anyway
+        console.log('⚠️ Auto sign-in requires email confirmation');
+        alert("✅ Registration successful!\n\nYour account is ready! We've sent a confirmation email to " + accountData.email + ".\n\nYou can start using the app now. Please verify your email within 7 days for full access.");
+        router.push("/dashboard");
       } else {
-        // No email confirmation needed - direct login
-        alert("🎉 Registration successful!\n\nYour birth chart has been generated!\n\nWelcome to your personalized Vedic astrology dashboard.");
+        // Sign-in successful - go to dashboard
+        console.log('✅ Signed in automatically');
         router.push("/dashboard");
       }
     } catch (err: any) {

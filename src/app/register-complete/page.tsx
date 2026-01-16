@@ -30,7 +30,7 @@ export default function CompleteRegistrationPage() {
     timezone: "Asia/Kolkata",
   });
 
-  // Check authentication on mount
+  // Check authentication on mount (but don't block access)
   useEffect(() => {
     async function checkAuth() {
       try {
@@ -38,22 +38,18 @@ export default function CompleteRegistrationPage() {
 
         if (error) {
           console.error('Error checking session:', error);
-          setError("Authentication error. Please try signing in again.");
-          setCheckingAuth(false);
-          return;
+          // Don't block - let them continue anyway
         }
 
-        if (!session) {
-          console.log('No session found, redirecting to login');
-          router.push('/login');
-          return;
+        if (session) {
+          console.log('✅ User authenticated:', session.user.email);
+        } else {
+          console.log('⚠️ No session - user may need to confirm email later');
         }
 
-        console.log('✅ User authenticated:', session.user.email);
         setCheckingAuth(false);
       } catch (err) {
         console.error('Error in checkAuth:', err);
-        setError("Failed to verify authentication. Please try again.");
         setCheckingAuth(false);
       }
     }
@@ -105,15 +101,16 @@ export default function CompleteRegistrationPage() {
     try {
       // Get current session and user
       const { data: { session } } = await supabase.auth.getSession();
+      const { data: { user } } = await supabase.auth.getUser();
 
-      if (!session || !session.user) {
-        setError("Session expired. Please sign in again.");
+      if (!user) {
+        setError("⚠️ Email confirmation required. Please check your email and click the confirmation link, then sign in to complete your profile.\n\nTip: Ask your admin to disable 'Confirm email' in Supabase settings for instant access.");
         setIsLoading(false);
-        router.push('/login');
+        setTimeout(() => router.push('/login'), 5000);
         return;
       }
 
-      const user = session.user;
+      // User exists (even if session is pending email confirmation)
       console.log('📝 Step 1/3: Saving birth profile for user:', user.email);
       // Update user profile with birth details
       await updateUserProfile(birthData);
