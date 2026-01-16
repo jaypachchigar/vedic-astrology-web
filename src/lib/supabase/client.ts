@@ -40,7 +40,16 @@ function getSupabaseInstance() {
   if (!supabaseInstance) {
     supabaseInstance = createSupabaseClient(
       getSupabaseUrl(),
-      getSupabaseAnonKey()
+      getSupabaseAnonKey(),
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true,
+          storageKey: 'vedic-astrology-auth',
+          storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        },
+      }
     );
   }
   return supabaseInstance;
