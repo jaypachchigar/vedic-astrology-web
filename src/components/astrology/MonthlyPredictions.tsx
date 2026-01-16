@@ -51,10 +51,10 @@ export function MonthlyPredictions({ moonSign, ascendant, year = 2026 }: Monthly
       {/* Header */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-purple/5">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-gold to-purple bg-clip-text text-transparent">
+          <CardTitle className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary via-gold to-purple bg-clip-text text-transparent">
             Month-by-Month Predictions for {year}
           </CardTitle>
-          <CardDescription className="text-base">
+          <CardDescription className="text-sm md:text-base">
             Detailed monthly guidance for {moonSign} Moon Sign
           </CardDescription>
         </CardHeader>
@@ -71,7 +71,7 @@ export function MonthlyPredictions({ moonSign, ascendant, year = 2026 }: Monthly
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <div className="flex items-center space-x-3">
-                  <CardTitle className="text-xl">{forecast.month} {year}</CardTitle>
+                  <CardTitle className="text-lg md:text-xl">{forecast.month} {year}</CardTitle>
                   {getTrendIcon(forecast.rating)}
                 </div>
                 <div className="flex items-center space-x-2">

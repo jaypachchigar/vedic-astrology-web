@@ -67,18 +67,18 @@ export function YearlyPredictions({ moonSign, ascendant, mahaDasha, year = 2026 
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-purple/5">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Calendar className="w-8 h-8 text-primary" />
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <Calendar className="w-6 h-6 md:w-8 md:h-8 text-primary" />
               <div>
-                <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-gold to-purple bg-clip-text text-transparent">
+                <CardTitle className="text-xl md:text-3xl font-bold bg-gradient-to-r from-primary via-gold to-purple bg-clip-text text-transparent">
                   Your {year} Yearly Forecast
                 </CardTitle>
-                <CardDescription className="text-base mt-1">
+                <CardDescription className="text-sm md:text-base mt-1">
                   Complete Year Ahead Analysis for {moonSign} Moon Sign
                 </CardDescription>
               </div>
             </div>
-            <Badge variant="outline" className="text-lg px-4 py-2">
+            <Badge variant="outline" className="text-sm md:text-lg px-3 md:px-4 py-1.5 md:py-2">
               {year}
             </Badge>
           </div>
