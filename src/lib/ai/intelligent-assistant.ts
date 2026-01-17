@@ -1025,14 +1025,13 @@ Once your chart is generated (takes about 10 seconds), come back here and ask yo
    */
   async submitFeedback(feedback: ConversationFeedback): Promise<void> {
     try {
-      // @ts-ignore
       const { error } = await (supabase
-        .from('ai_conversations')
+        .from('ai_conversations') as any)
         .update({
           user_rating: feedback.rating,
           was_helpful: feedback.wasHelpful,
           user_feedback: feedback.feedback,
-        }) as any)
+        })
         .eq('id', feedback.conversationId);
 
       if (error) {
@@ -1087,15 +1086,14 @@ Once your chart is generated (takes about 10 seconds), come back here and ask yo
           const newSuccessRate = ((pattern.success_rate || 0) * (pattern.times_used || 0) + feedback.rating * 20) / newTimesUsed;
           const newAvgRating = ((pattern.average_rating || 0) * (pattern.times_used || 0) + feedback.rating) / newTimesUsed;
 
-          // @ts-ignore
           await (supabase
-            .from('ai_learned_patterns')
+            .from('ai_learned_patterns') as any)
             .update({
               times_used: newTimesUsed,
               success_rate: newSuccessRate,
               average_rating: newAvgRating,
               last_used_at: new Date().toISOString(),
-            }) as any)
+            })
             .eq('id', pattern.id);
 
           console.log('✅ Updated existing pattern:', pattern.id);
@@ -1170,10 +1168,9 @@ Once your chart is generated (takes about 10 seconds), come back here and ask yo
 
       if (existing) {
         // Mark old as not current and insert new
-        // @ts-ignore
         await (supabase
-          .from('ai_chart_insights')
-          .update({ is_current: false }) as any)
+          .from('ai_chart_insights') as any)
+          .update({ is_current: false })
           .eq('id', (existing as any).id);
       }
 

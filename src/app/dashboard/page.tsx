@@ -49,11 +49,11 @@ export default function DashboardPage() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .maybeSingle();
+        .maybeSingle() as { data: any };
 
       let name = "";
       if (profile?.full_name) {
-        name = profile.full_name.split(' ')[0]; // First name only
+        name = (profile.full_name as string).split(' ')[0]; // First name only
       } else {
         const emailName = user.email?.split('@')[0] || 'User';
         name = emailName.charAt(0).toUpperCase() + emailName.slice(1);

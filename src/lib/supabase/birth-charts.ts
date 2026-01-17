@@ -80,9 +80,8 @@ export async function updateUserProfile(
   console.log('📝 Updates:', updates);
 
   // Use upsert to insert or update
-  // @ts-ignore
   const { data, error } = await (supabase
-    .from('profiles')
+    .from('profiles') as any)
     .upsert({
       id: user_id,
       email: user_email || updates.full_name || 'user@email.com',
@@ -90,7 +89,7 @@ export async function updateUserProfile(
       updated_at: new Date().toISOString()
     }, {
       onConflict: 'id'
-    }) as any)
+    })
     .select()
     .single();
 
@@ -136,9 +135,8 @@ export async function saveBirthChart(
   const advancedKundli = chartData.chart_data?.advancedKundli || {};
   const planetPositions = chartData.chart_data?.planetPositions?.planets || [];
 
-  // @ts-ignore
   const { data, error } = await (supabase
-    .from('birth_charts')
+    .from('birth_charts') as any)
     .insert({
       user_id: user_id,
       chart_name: chartData.name,
@@ -154,7 +152,7 @@ export async function saveBirthChart(
       dasha: advancedKundli.vimshottari_dasha || null,
       doshas: advancedKundli.doshas || null,
       is_primary: false,
-    }) as any)
+    })
     .select()
     .single();
 

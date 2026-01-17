@@ -21,7 +21,7 @@ export async function getUserProfileClient() {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .maybeSingle();
+      .maybeSingle() as { data: any; error: any };
 
     if (error) {
       console.error('❌ Profile load error:', error);
@@ -33,7 +33,7 @@ export async function getUserProfileClient() {
       return null;
     }
 
-    console.log('✅ Profile loaded:', data.full_name);
+    console.log('✅ Profile loaded:', data?.full_name);
     return data;
 
   } catch (error) {
