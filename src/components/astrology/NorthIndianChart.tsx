@@ -23,26 +23,26 @@ export function NorthIndianChart({ planets, ascendant }: NorthIndianChartProps) 
   const signNames = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
                      'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
 
-  // Helper to render planets with wrapping
-  const renderPlanets = (house: number, x: number, y: number, maxWidth: number = 120) => {
+  // Helper to render planets with wrapping - centered in the house section
+  const renderPlanets = (house: number, x: number, y: number, maxWidth: number = 120, height: number = 70) => {
     const planetsList = houseContents[house] || [];
     if (planetsList.length === 0) return null;
 
     return (
-      <foreignObject x={x - maxWidth/2} y={y} width={maxWidth} height="85">
+      <foreignObject x={x - maxWidth/2} y={y - height/2} width={maxWidth} height={height}>
         <div style={{
-          fontSize: '18px',
+          fontSize: '16px',
           fontWeight: '700',
           color: '#d00',
           textAlign: 'center',
           wordWrap: 'break-word',
-          lineHeight: '1.2',
+          lineHeight: '1.1',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',
           height: '100%',
-          padding: '2px'
+          padding: '4px'
         }}>
           {planetsList.join(', ')}
         </div>
@@ -69,64 +69,64 @@ export function NorthIndianChart({ planets, ascendant }: NorthIndianChartProps) 
         <line x1="400" y1="400" x2="790" y2="790" stroke="#000" strokeWidth="2.5" />
 
         {/* HOUSE 1 - TOP (Ascendant is here) */}
-        <text x="400" y="95" fontSize="24" fontWeight="bold" textAnchor="middle">H1</text>
-        <text x="400" y="122" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant - 1) % 12]}</text>
-        {renderPlanets(1, 400, 145, 180)}
+        <text x="400" y="165" fontSize="22" fontWeight="bold" textAnchor="middle">H1</text>
+        <text x="400" y="190" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant - 1) % 12]}</text>
+        {renderPlanets(1, 400, 230, 180, 60)}
 
         {/* HOUSE 2 - TOP LEFT TRIANGLE */}
-        <text x="205" y="80" fontSize="24" fontWeight="bold" textAnchor="middle">H2</text>
-        <text x="205" y="105" fontSize="18" fill="#555" textAnchor="middle">{signNames[ascendant % 12]}</text>
-        {renderPlanets(2, 205, 128, 140)}
+        <text x="205" y="165" fontSize="22" fontWeight="bold" textAnchor="middle">H2</text>
+        <text x="205" y="190" fontSize="16" fill="#555" textAnchor="middle">{signNames[ascendant % 12]}</text>
+        {renderPlanets(2, 205, 230, 140, 60)}
 
         {/* HOUSE 3 - LEFT TOP */}
-        <text x="75" y="185" fontSize="24" fontWeight="bold" textAnchor="middle">H3</text>
-        <text x="75" y="210" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 1) % 12]}</text>
-        {renderPlanets(3, 75, 233, 100)}
+        <text x="140" y="245" fontSize="22" fontWeight="bold" textAnchor="middle">H3</text>
+        <text x="140" y="270" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 1) % 12]}</text>
+        {renderPlanets(3, 140, 310, 120, 60)}
 
         {/* HOUSE 4 - LEFT CENTER */}
-        <text x="140" y="380" fontSize="24" fontWeight="bold" textAnchor="middle">H4</text>
-        <text x="140" y="405" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 2) % 12]}</text>
-        {renderPlanets(4, 140, 428, 140)}
+        <text x="140" y="505" fontSize="22" fontWeight="bold" textAnchor="middle">H4</text>
+        <text x="140" y="530" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 2) % 12]}</text>
+        {renderPlanets(4, 140, 570, 120, 60)}
 
         {/* HOUSE 5 - LEFT BOTTOM */}
-        <text x="75" y="575" fontSize="24" fontWeight="bold" textAnchor="middle">H5</text>
-        <text x="75" y="600" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 3) % 12]}</text>
-        {renderPlanets(5, 75, 623, 100)}
+        <text x="140" y="570" fontSize="22" fontWeight="bold" textAnchor="middle">H5</text>
+        <text x="140" y="595" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 3) % 12]}</text>
+        {renderPlanets(5, 140, 635, 120, 60)}
 
         {/* HOUSE 6 - BOTTOM LEFT TRIANGLE */}
-        <text x="205" y="685" fontSize="24" fontWeight="bold" textAnchor="middle">H6</text>
-        <text x="205" y="710" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 4) % 12]}</text>
-        {renderPlanets(6, 205, 733, 140)}
+        <text x="205" y="570" fontSize="22" fontWeight="bold" textAnchor="middle">H6</text>
+        <text x="205" y="595" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 4) % 12]}</text>
+        {renderPlanets(6, 205, 635, 140, 60)}
 
         {/* HOUSE 7 - BOTTOM CENTER */}
-        <text x="400" y="638" fontSize="24" fontWeight="bold" textAnchor="middle">H7</text>
-        <text x="400" y="663" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 5) % 12]}</text>
-        {renderPlanets(7, 400, 685, 180)}
+        <text x="400" y="570" fontSize="22" fontWeight="bold" textAnchor="middle">H7</text>
+        <text x="400" y="595" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 5) % 12]}</text>
+        {renderPlanets(7, 400, 635, 180, 60)}
 
         {/* HOUSE 8 - BOTTOM RIGHT TRIANGLE */}
-        <text x="595" y="685" fontSize="24" fontWeight="bold" textAnchor="middle">H8</text>
-        <text x="595" y="710" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 6) % 12]}</text>
-        {renderPlanets(8, 595, 733, 140)}
+        <text x="595" y="570" fontSize="22" fontWeight="bold" textAnchor="middle">H8</text>
+        <text x="595" y="595" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 6) % 12]}</text>
+        {renderPlanets(8, 595, 635, 140, 60)}
 
         {/* HOUSE 9 - RIGHT BOTTOM */}
-        <text x="725" y="575" fontSize="24" fontWeight="bold" textAnchor="middle">H9</text>
-        <text x="725" y="600" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 7) % 12]}</text>
-        {renderPlanets(9, 725, 623, 100)}
+        <text x="660" y="570" fontSize="22" fontWeight="bold" textAnchor="middle">H9</text>
+        <text x="660" y="595" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 7) % 12]}</text>
+        {renderPlanets(9, 660, 635, 120, 60)}
 
         {/* HOUSE 10 - RIGHT CENTER */}
-        <text x="660" y="380" fontSize="24" fontWeight="bold" textAnchor="middle">H10</text>
-        <text x="660" y="405" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 8) % 12]}</text>
-        {renderPlanets(10, 660, 428, 140)}
+        <text x="660" y="245" fontSize="22" fontWeight="bold" textAnchor="middle">H10</text>
+        <text x="660" y="270" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 8) % 12]}</text>
+        {renderPlanets(10, 660, 310, 120, 60)}
 
         {/* HOUSE 11 - RIGHT TOP */}
-        <text x="725" y="185" fontSize="24" fontWeight="bold" textAnchor="middle">H11</text>
-        <text x="725" y="210" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 9) % 12]}</text>
-        {renderPlanets(11, 725, 233, 100)}
+        <text x="660" y="165" fontSize="22" fontWeight="bold" textAnchor="middle">H11</text>
+        <text x="660" y="190" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 9) % 12]}</text>
+        {renderPlanets(11, 660, 230, 120, 60)}
 
         {/* HOUSE 12 - TOP RIGHT TRIANGLE */}
-        <text x="595" y="80" fontSize="24" fontWeight="bold" textAnchor="middle">H12</text>
-        <text x="595" y="105" fontSize="18" fill="#555" textAnchor="middle">{signNames[(ascendant + 10) % 12]}</text>
-        {renderPlanets(12, 595, 128, 140)}
+        <text x="595" y="165" fontSize="22" fontWeight="bold" textAnchor="middle">H12</text>
+        <text x="595" y="190" fontSize="16" fill="#555" textAnchor="middle">{signNames[(ascendant + 10) % 12]}</text>
+        {renderPlanets(12, 595, 230, 140, 60)}
       </svg>
     </div>
   );
