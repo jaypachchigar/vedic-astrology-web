@@ -103,13 +103,15 @@ export function calculateDivisionalPosition(rasiLongitude: number, division: num
       divisionalSign = (signNumber + 6 + part) % 12;
     }
   }
-  // Special case for D9 (Navamsa)
+  // Special case for D9 (Navamsa) - Most important divisional chart
   else if (division === 9) {
-    const part = Math.floor(degreeInSign * 9 / 30); // 0-8
+    const part = Math.floor(degreeInSign * 9 / 30); // 0-8 (each part is 3°20')
+    // For odd signs (Aries, Gemini, Leo, Libra, Sagittarius, Aquarius): Start from Aries
+    // For even signs (Taurus, Cancer, Virgo, Scorpio, Capricorn, Pisces): Start from Capricorn
     if (isOddSign) {
-      divisionalSign = (signNumber + part) % 12;
+      divisionalSign = part; // Starts from Aries (0)
     } else {
-      divisionalSign = (signNumber + 8 + part) % 12;
+      divisionalSign = (9 + part) % 12; // Starts from Capricorn (9)
     }
   }
   // Special case for D10 (Dasamsa)
@@ -128,11 +130,13 @@ export function calculateDivisionalPosition(rasiLongitude: number, division: num
   }
   // Special case for D16 (Shodasamsa)
   else if (division === 16) {
-    const part = Math.floor(degreeInSign * 16 / 30); // 0-15
+    const part = Math.floor(degreeInSign * 16 / 30); // 0-15 (each part is 1°52'30")
+    // For odd signs: Start from Aries (movable)
+    // For even signs: Start from Libra (movable)
     if (isOddSign) {
-      divisionalSign = (part) % 12;
+      divisionalSign = (part) % 12; // Starts from Aries (0)
     } else {
-      divisionalSign = (8 + part) % 12;
+      divisionalSign = (6 + part) % 12; // Starts from Libra (6)
     }
   }
   // Special case for D20 (Vimsamsa)
@@ -155,12 +159,9 @@ export function calculateDivisionalPosition(rasiLongitude: number, division: num
   }
   // Special case for D27 (Bhamsa)
   else if (division === 27) {
-    const part = Math.floor(degreeInSign * 27 / 30); // 0-26
-    if (isOddSign) {
-      divisionalSign = (part) % 12;
-    } else {
-      divisionalSign = (8 + part) % 12;
-    }
+    const part = Math.floor(degreeInSign * 27 / 30); // 0-26 (each part is 1°6'40")
+    // For both odd and even signs: Start from Aries
+    divisionalSign = (part) % 12;
   }
   // Special case for D30 (Trimsamsa)
   else if (division === 30) {
@@ -185,21 +186,15 @@ export function calculateDivisionalPosition(rasiLongitude: number, division: num
   }
   // Special case for D40 (Khavedamsa)
   else if (division === 40) {
-    const part = Math.floor(degreeInSign * 40 / 30); // 0-39
-    if (isOddSign) {
-      divisionalSign = (part) % 12;
-    } else {
-      divisionalSign = (8 + part) % 12;
-    }
+    const part = Math.floor(degreeInSign * 40 / 30); // 0-39 (each part is 0°45')
+    // For both odd and even signs: Start from Aries
+    divisionalSign = (part) % 12;
   }
   // Special case for D45 (Akshavedamsa)
   else if (division === 45) {
-    const part = Math.floor(degreeInSign * 45 / 30); // 0-44
-    if (isOddSign) {
-      divisionalSign = (part) % 12;
-    } else {
-      divisionalSign = (8 + part) % 12;
-    }
+    const part = Math.floor(degreeInSign * 45 / 30); // 0-44 (each part is 0°40')
+    // For both odd and even signs: Start from Aries
+    divisionalSign = (part) % 12;
   }
   // Special case for D60 (Shashtiamsa)
   else if (division === 60) {
