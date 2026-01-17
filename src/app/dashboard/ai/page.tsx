@@ -9,6 +9,7 @@ import { getChatHistory, saveChatMessage, clearChatHistory } from "@/lib/supabas
 import { getUserProfile, getUserBirthCharts } from "@/lib/supabase/birth-charts";
 import { intelligentAssistant, BirthChartContext } from "@/lib/ai/intelligent-assistant";
 import { supabase } from "@/lib/supabase/client";
+import { getCompleteBirthChart } from "@/lib/vedic-astrology";
 
 interface Message {
   id: string;
@@ -135,18 +136,75 @@ export default function AIAssistantPage() {
     loadData();
   }, []);
 
-  // Build birth chart context from loaded data
-  const buildBirthChartContext = (): BirthChartContext | null => {
+  // Calculate birth chart on-the-fly from profile data
+  const calculateBirthChartFromProfile = async (): Promise<BirthChartContext | null> => {
+    if (!userProfile || !userProfile.date_of_birth || !userProfile.time_of_birth || !userProfile.latitude) {
+      console.log('⚠️ Insufficient profile data to calculate chart');
+      return null;
+    }
+
+    try {
+      console.log('🔮 Calculating birth chart on-the-fly from profile data...');
+
+      // Build datetime string for calculation
+      const datetime = `${userProfile.date_of_birth}T${userProfile.time_of_birth}`;
+
+      const chartResult = await getCompleteBirthChart({
+        datetime,
+        latitude: userProfile.latitude,
+        longitude: userProfile.longitude || 0,
+      });
+
+      console.log('✅ Birth chart calculated successfully');
+
+      // Extract data from calculated chart
+      const planets = chartResult.kundli?.planets || [];
+      const moonPlanet = planets.find((p: any) => p.name === 'Moon');
+      const sunPlanet = planets.find((p: any) => p.name === 'Sun');
+
+      const context: BirthChartContext = {
+        moonSign: moonPlanet?.sign?.name || '',
+        moonNakshatra: moonPlanet?.nakshatra?.name || '',
+        ascendant: chartResult.kundli?.ascendant?.sign?.name || '',
+        sunSign: sunPlanet?.sign?.name || '',
+        mahaDasha: chartResult.advancedKundli?.vimshottari_dasha?.maha_dasha?.planet || '',
+        antarDasha: chartResult.advancedKundli?.vimshottari_dasha?.antar_dasha?.planet || '',
+        dateOfBirth: userProfile.date_of_birth,
+        timeOfBirth: userProfile.time_of_birth,
+        latitude: userProfile.latitude,
+        longitude: userProfile.longitude || 0,
+        planetPositions: planets,
+        houses: chartResult.kundli?.houses || [],
+        yogas: chartResult.advancedKundli?.yogas || [],
+      };
+
+      console.log('📊 Built context from calculated chart:', {
+        moonSign: context.moonSign,
+        nakshatra: context.moonNakshatra,
+        ascendant: context.ascendant,
+        mahaDasha: context.mahaDasha,
+        antarDasha: context.antarDasha
+      });
+
+      return context;
+    } catch (error) {
+      console.error('❌ Error calculating birth chart:', error);
+      return null;
+    }
+  };
+
+  // Build birth chart context from loaded data OR calculate on-the-fly
+  const buildBirthChartContext = async (): Promise<BirthChartContext | null> => {
     // If no user profile with birth details, return null
     if (!userProfile || !userProfile.date_of_birth || !userProfile.time_of_birth) {
       console.log('⚠️ No complete user profile found - missing birth details');
       return null;
     }
 
-    // If we have birth chart data from database, use it
+    // If we have birth chart data from database, try to use it
     if (birthChartData) {
       try {
-        console.log('📊 Building context from birth chart data:', birthChartData);
+        console.log('📊 Attempting to build context from saved birth chart data...');
 
         // Handle different possible data structures
         const planets = birthChartData.planets || birthChartData.planetPositions?.planets || [];
@@ -180,57 +238,44 @@ export default function AIAssistantPage() {
                           dashaData.current_antar_dasha?.planet ||
                           dashaData.antarDasha || '';
 
-        const context: BirthChartContext = {
-          moonSign,
-          moonNakshatra,
-          ascendant,
-          sunSign,
-          mahaDasha,
-          antarDasha,
-          dateOfBirth: userProfile.date_of_birth || '',
-          timeOfBirth: userProfile.time_of_birth || '',
-          latitude: userProfile.latitude || 0,
-          longitude: userProfile.longitude || 0,
-          planetPositions: planets,
-          houses: birthChartData.houses || kundliData.houses || [],
-          yogas: birthChartData.yogas || [],
-        };
+        // Check if we have the essential data
+        if (moonSign && ascendant && mahaDasha) {
+          const context: BirthChartContext = {
+            moonSign,
+            moonNakshatra,
+            ascendant,
+            sunSign,
+            mahaDasha,
+            antarDasha,
+            dateOfBirth: userProfile.date_of_birth || '',
+            timeOfBirth: userProfile.time_of_birth || '',
+            latitude: userProfile.latitude || 0,
+            longitude: userProfile.longitude || 0,
+            planetPositions: planets,
+            houses: birthChartData.houses || kundliData.houses || [],
+            yogas: birthChartData.yogas || [],
+          };
 
-        console.log('✅ Built context:', {
-          moonSign: context.moonSign,
-          ascendant: context.ascendant,
-          mahaDasha: context.mahaDasha,
-          antarDasha: context.antarDasha
-        });
+          console.log('✅ Built context from database:', {
+            moonSign: context.moonSign,
+            ascendant: context.ascendant,
+            mahaDasha: context.mahaDasha,
+            antarDasha: context.antarDasha
+          });
 
-        console.log('📊 Built birth chart context from database:', context);
-        return context;
+          return context;
+        } else {
+          console.log('⚠️ Saved chart data incomplete, calculating on-the-fly...');
+        }
       } catch (error) {
-        console.error('❌ Error building birth chart context:', error);
-        return null;
+        console.error('❌ Error reading saved chart data:', error);
       }
     }
 
-    // If no birth chart in database but we have profile data, return basic context
-    // This allows AI to still answer based on birth date and location
+    // Calculate birth chart on-the-fly if database data is incomplete
     if (userProfile.date_of_birth && userProfile.time_of_birth && userProfile.latitude) {
-      console.log('⚠️ No birth chart found in database, using basic profile data');
-      const basicContext: BirthChartContext = {
-        moonSign: '',
-        moonNakshatra: '',
-        ascendant: '',
-        sunSign: '',
-        mahaDasha: '',
-        antarDasha: '',
-        dateOfBirth: userProfile.date_of_birth,
-        timeOfBirth: userProfile.time_of_birth,
-        latitude: userProfile.latitude || 0,
-        longitude: userProfile.longitude || 0,
-        planetPositions: [],
-        houses: [],
-        yogas: [],
-      };
-      return basicContext;
+      console.log('🔮 Calculating birth chart on-the-fly...');
+      return await calculateBirthChartFromProfile();
     }
 
     console.log('⚠️ Insufficient profile data for birth chart context');
@@ -261,15 +306,15 @@ export default function AIAssistantPage() {
     }
 
     try {
-      // Build birth chart context from user data
-      const context = buildBirthChartContext();
+      // Build birth chart context from user data (calculates on-the-fly if needed)
+      const context = await buildBirthChartContext();
 
       if (!context) {
         // No birth chart data - ask user to complete profile
         const aiMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: `I notice you haven't completed your birth profile yet. To provide you with accurate, personalized astrological insights based on your actual birth chart, I need your complete birth details.\n\nPlease visit your Profile page to add:\n• Date of Birth\n• Time of Birth  \n• Place of Birth\n\nOnce your profile is complete, I'll be able to:\n• Analyze your birth chart with precise planetary positions\n• Provide answers based on your Moon sign, Nakshatra, and Ascendant\n• Calculate your current Maha and Antar Dasha periods\n• Offer specific remedies based on your chart\n• Give you detailed, personalized guidance (1000+ words per answer)\n\nWould you like general astrological guidance in the meantime?`,
+          content: `Namaste! 🙏\n\nI notice your birth profile is incomplete. To give you accurate, personalized readings based on your actual Kundli, please add your birth details:\n\n• Date of Birth\n• Exact Time of Birth\n• Place of Birth (with location)\n\nGo to your Profile page to add these details. Once complete, I can analyze your:\n\n✨ Moon Sign, Nakshatra & Ascendant\n✨ Current Maha & Antar Dasha periods\n✨ Planetary positions and their effects\n✨ Personalized remedies and guidance\n\nWould you like some general astrological guidance while you complete your profile?`,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, aiMessage]);

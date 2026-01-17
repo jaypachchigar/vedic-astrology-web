@@ -270,19 +270,19 @@ class IntelligentAssistant {
 
     const parts: string[] = [];
 
-    // Opening with personalization - sound like a real astrologer
-    parts.push(`Namaste 🙏\n`);
-    parts.push(`Let me analyze your question through the sacred lens of Vedic astrology...\n`);
+    // Opening - conversational like a real astrologer
+    const openings = [
+      `Namaste! 🙏 I've carefully studied your Kundli, and here's what the stars reveal for your question...\n`,
+      `Greetings! After analyzing your birth chart in detail, I can share some important insights with you...\n`,
+      `Namaste! Your question is very relevant to your current planetary phase. Let me explain what your chart indicates...\n`,
+      `Welcome! I see you have a ${context.moonSign} Moon with ${context.ascendant} rising - this gives you unique qualities that directly relate to your question...\n`,
+    ];
+    parts.push(openings[Math.floor(Math.random() * openings.length)]);
 
-    // Include relevant birth chart details
-    parts.push(`📊 **Your Birth Chart Configuration:**`);
-    parts.push(`• Moon Sign (Chandra Rashi): ${context.moonSign}`);
-    parts.push(`• Birth Nakshatra: ${context.moonNakshatra}`);
-    parts.push(`• Ascendant (Lagna): ${context.ascendant}`);
-    parts.push(`• Current Dasha Period: ${context.mahaDasha} Maha Dasha → ${context.antarDasha} Antar Dasha\n`);
+    // Brief chart reference (not overwhelming with technical details)
+    parts.push(`*Based on: ${context.moonSign} Moon • ${context.moonNakshatra} Nakshatra • ${context.ascendant} Ascendant • ${context.mahaDasha}-${context.antarDasha} Dasha*\n`);
 
-    // MAIN ANSWER: Address the specific question using birth chart data
-    parts.push(`🔍 **Direct Answer to Your Question:**\n`);
+    // MAIN ANSWER: Address the specific question directly
     parts.push(this.analyzeSpecificQuestion(question, context, category));
 
     // Category-specific SUPPLEMENTARY analysis (not the main answer)
@@ -328,10 +328,14 @@ class IntelligentAssistant {
     parts.push(`\n🙏 **Recommended Remedies for Your Situation:**`);
     parts.push(this.getQuestionSpecificRemedies(context, question, category));
 
-    // Closing like a real astrologer
-    parts.push(`\n---`);
-    parts.push(`*This analysis is based on traditional Vedic astrology principles and your unique birth chart. Remember, the planets incline but do not compel - you always have free will to shape your destiny.*\n`);
-    parts.push(`May the divine grace guide you on your path. Om Shanti. 🙏✨`);
+    // Closing - varied and conversational
+    const closings = [
+      `\n---\nFeel free to ask any follow-up questions about this reading. The stars are always there to guide you! 🌟`,
+      `\n---\nRemember, these insights are based on your unique Kundli. Your actions and intentions also shape your path. Om Shanti! 🙏`,
+      `\n---\nI hope this helps clarify your question. The planets show tendencies, but your free will shapes the outcome. Blessings! ✨`,
+      `\n---\nThis is what your chart reveals. If you have more questions about specific aspects, feel free to ask! 🪐`,
+    ];
+    parts.push(closings[Math.floor(Math.random() * closings.length)]);
 
     return parts.join('\n');
   }
