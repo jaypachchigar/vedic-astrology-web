@@ -218,10 +218,23 @@ export default function SimpleRegisterPage() {
 
       console.log('🎉 Registration complete!');
 
-      // Show email verification step - DO NOT auto sign-in
-      // User must verify email before accessing the app
-      setStep(3);
-      setIsLoading(false);
+      // Sign in immediately - user has 7 days to verify email
+      console.log('🔐 Signing in automatically...');
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: accountData.email,
+        password: accountData.password,
+      });
+
+      if (signInError) {
+        // If sign-in fails, show verification screen
+        console.log('⚠️ Auto sign-in failed, showing verification screen');
+        setStep(3);
+        setIsLoading(false);
+      } else {
+        // Sign-in successful - go to dashboard
+        console.log('✅ Signed in automatically');
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       console.error("Registration error:", err);
       setError(err.message || "Registration failed. Please try again.");
