@@ -7,16 +7,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { GlassCard, GlassCardContent, GlassCardDescription, GlassCardFooter, GlassCardHeader, GlassCardTitle } from "@/components/ui/glass-card";
 import { VedicLogo } from "@/components/brand/VedicLogo";
-import { AlertCircle, ArrowRight, Loader2, User, Mail, Lock, Calendar, Clock, MapPin } from "lucide-react";
+import { AlertCircle, ArrowRight, Loader2, User, Mail, Lock, Calendar, Clock, MapPin, CheckCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { LocationAutocomplete } from "@/components/astrology/LocationAutocomplete";
-import { updateUserProfile, saveBirthChart } from "@/lib/supabase/birth-charts";
 import { getCompleteBirthChart, convertToAPIFormat } from "@/lib/astrology-api";
+import { registerSchema } from "@/lib/validation";
+
+const DISPOSABLE_EMAIL_DOMAINS = [
+  'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
+  'temp-mail.org', '10minutemail.com', 'fakeinbox.com', 'trashmail.com',
+  'yopmail.com', 'getnada.com', 'tempail.com', 'dispostable.com',
+  'mailnesia.com', 'tempr.email', 'discard.email', 'spamgourmet.com',
+  'mytemp.email', 'mohmal.com', 'tempmailo.com', 'emailondeck.com',
+  'guerrillamailblock.com', 'sharklasers.com', 'spam4.me', 'grr.la',
+  'maildrop.cc', 'mailsac.com', 'tempinbox.com'
+];
+
+function isDisposableEmail(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return DISPOSABLE_EMAIL_DOMAINS.some(d => domain?.includes(d));
+}
 
 export default function SimpleRegisterPage() {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,24 +78,23 @@ export default function SimpleRegisterPage() {
     e.preventDefault();
     setError(null);
 
-    // Validation
-    if (!accountData.name.trim()) {
-      setError("Please enter your name");
+    // Check for disposable email
+    if (isDisposableEmail(accountData.email)) {
+      setError("Please use a valid email address. Temporary or disposable emails are not allowed.");
       return;
     }
 
-    if (!accountData.email.trim()) {
-      setError("Please enter your email");
-      return;
-    }
+    // Validate using Zod schema
+    const result = registerSchema.safeParse({
+      name: accountData.name,
+      email: accountData.email,
+      password: accountData.password,
+      confirmPassword: accountData.confirmPassword,
+    });
 
-    if (accountData.password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
-    if (accountData.password !== accountData.confirmPassword) {
-      setError("Passwords do not match");
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      setError(firstError.message);
       return;
     }
 
@@ -204,24 +218,10 @@ export default function SimpleRegisterPage() {
 
       console.log('🎉 Registration complete!');
 
-      // Sign in immediately with the credentials to create a session
-      console.log('🔐 Signing in automatically...');
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: accountData.email,
-        password: accountData.password,
-      });
-
-      if (signInError) {
-        // If auto sign-in fails (email confirmation required), that's okay
-        // Just let them know and redirect to dashboard anyway
-        console.log('⚠️ Auto sign-in requires email confirmation');
-        alert("✅ Registration successful!\n\nYour account is ready! We've sent a confirmation email to " + accountData.email + ".\n\nYou can start using the app now. Please verify your email within 7 days for full access.");
-        router.push("/dashboard");
-      } else {
-        // Sign-in successful - go to dashboard
-        console.log('✅ Signed in automatically');
-        router.push("/dashboard");
-      }
+      // Show email verification step - DO NOT auto sign-in
+      // User must verify email before accessing the app
+      setStep(3);
+      setIsLoading(false);
     } catch (err: any) {
       console.error("Registration error:", err);
       setError(err.message || "Registration failed. Please try again.");
@@ -242,32 +242,36 @@ export default function SimpleRegisterPage() {
         <GlassCard variant="gradient" animated>
           <GlassCardHeader className="space-y-1">
             <GlassCardTitle className="text-2xl font-bold bg-gradient-to-r from-primary via-gold to-purple-light bg-clip-text text-transparent">
-              {step === 1 ? "Create Your Account" : "Complete Your Birth Profile"}
+              {step === 1 ? "Create Your Account" : step === 2 ? "Complete Your Birth Profile" : "Verify Your Email"}
             </GlassCardTitle>
             <GlassCardDescription>
               {step === 1
                 ? "Start your journey with authentic Vedic wisdom"
-                : "We'll use this to generate your personalized birth chart"}
+                : step === 2
+                ? "We'll use this to generate your personalized birth chart"
+                : "One last step to secure your account"}
             </GlassCardDescription>
           </GlassCardHeader>
 
           <GlassCardContent>
             {/* Progress Indicator */}
-            <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center space-x-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                  step === 1 ? 'bg-primary text-primary-foreground' : 'bg-primary/20 text-primary'
-                }`}>
-                  1
-                </div>
-                <div className="w-12 h-0.5 bg-primary/20"></div>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                  step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                }`}>
-                  2
+            {step !== 3 && (
+              <div className="flex items-center justify-center mb-6">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    step === 1 ? 'bg-primary text-primary-foreground' : 'bg-primary/20 text-primary'
+                  }`}>
+                    1
+                  </div>
+                  <div className="w-12 h-0.5 bg-primary/20"></div>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                    step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    2
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {error && (
               <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
@@ -320,14 +324,17 @@ export default function SimpleRegisterPage() {
                     <Input
                       id="password"
                       type="password"
-                      placeholder="At least 6 characters"
+                      placeholder="Min 8 chars, uppercase, lowercase, number"
                       value={accountData.password}
                       onChange={(e) => setAccountData({ ...accountData, password: e.target.value })}
                       className="pl-10"
                       required
-                      minLength={6}
+                      minLength={8}
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Must contain uppercase, lowercase, and a number
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -446,16 +453,74 @@ export default function SimpleRegisterPage() {
                 </div>
               </form>
             )}
+
+            {/* Step 3: Email Verification */}
+            {step === 3 && (
+              <div className="text-center space-y-6">
+                <div className="w-20 h-20 mx-auto rounded-full bg-green-500/20 flex items-center justify-center">
+                  <CheckCircle className="w-10 h-10 text-green-500" />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">Check Your Email</h3>
+                  <p className="text-muted-foreground">
+                    We&apos;ve sent a verification link to:
+                  </p>
+                  <p className="font-medium text-primary">{accountData.email}</p>
+                </div>
+
+                <div className="bg-muted/50 p-4 rounded-lg text-sm text-muted-foreground space-y-2">
+                  <p><strong>Next steps:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1 text-left">
+                    <li>Open your email inbox</li>
+                    <li>Click the verification link we sent</li>
+                    <li>Return here to sign in</li>
+                  </ol>
+                </div>
+
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => router.push("/login")}
+                    className="w-full bg-gradient-to-r from-primary to-gold"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Go to Sign In
+                  </Button>
+
+                  <p className="text-xs text-muted-foreground">
+                    Didn&apos;t receive the email? Check your spam folder or{" "}
+                    <button
+                      onClick={async () => {
+                        try {
+                          await supabase.auth.resend({
+                            type: 'signup',
+                            email: accountData.email,
+                          });
+                          alert("Verification email resent! Please check your inbox.");
+                        } catch (e) {
+                          alert("Failed to resend. Please try again later.");
+                        }
+                      }}
+                      className="text-primary hover:underline"
+                    >
+                      resend it
+                    </button>
+                  </p>
+                </div>
+              </div>
+            )}
           </GlassCardContent>
 
-          <GlassCardFooter className="flex flex-col space-y-4">
-            <div className="text-sm text-center text-muted-foreground">
-              Already have an account?{" "}
-              <Link href="/login" className="text-primary hover:underline font-medium">
-                Sign in
-              </Link>
-            </div>
-          </GlassCardFooter>
+          {step !== 3 && (
+            <GlassCardFooter className="flex flex-col space-y-4">
+              <div className="text-sm text-center text-muted-foreground">
+                Already have an account?{" "}
+                <Link href="/login" className="text-primary hover:underline font-medium">
+                  Sign in
+                </Link>
+              </div>
+            </GlassCardFooter>
+          )}
         </GlassCard>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
