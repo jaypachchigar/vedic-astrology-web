@@ -191,8 +191,8 @@ export default function SettingsPage() {
               </div>
               <Select
                 value={settings.theme}
-                onValueChange={(value: "light" | "dark" | "system") =>
-                  setSettings({ ...settings, theme: value })
+                onValueChange={(value: string) =>
+                  setSettings({ ...settings, theme: value as "light" | "dark" | "system" })
                 }
               >
                 <SelectTrigger className="w-32">
@@ -213,7 +213,7 @@ export default function SettingsPage() {
               </div>
               <Select
                 value={settings.language}
-                onValueChange={(value) => setSettings({ ...settings, language: value })}
+                onValueChange={(value: string) => setSettings({ ...settings, language: value })}
               >
                 <SelectTrigger className="w-32">
                   <SelectValue />
@@ -246,7 +246,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={settings.notifications.dailyHoroscope}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSettings({
                     ...settings,
                     notifications: { ...settings.notifications, dailyHoroscope: checked },
@@ -262,7 +262,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={settings.notifications.weeklyPredictions}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSettings({
                     ...settings,
                     notifications: { ...settings.notifications, weeklyPredictions: checked },
@@ -278,7 +278,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={settings.notifications.planetaryTransits}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSettings({
                     ...settings,
                     notifications: { ...settings.notifications, planetaryTransits: checked },
@@ -294,7 +294,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={settings.notifications.emailUpdates}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSettings({
                     ...settings,
                     notifications: { ...settings.notifications, emailUpdates: checked },
@@ -322,7 +322,7 @@ export default function SettingsPage() {
               </div>
               <Select
                 value={settings.predictions.defaultYear.toString()}
-                onValueChange={(value) =>
+                onValueChange={(value: string) =>
                   setSettings({
                     ...settings,
                     predictions: { ...settings.predictions, defaultYear: parseInt(value) },
@@ -349,7 +349,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={settings.predictions.showRemedies}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSettings({
                     ...settings,
                     predictions: { ...settings.predictions, showRemedies: checked },
@@ -365,7 +365,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={settings.predictions.showMantras}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSettings({
                     ...settings,
                     predictions: { ...settings.predictions, showMantras: checked },
@@ -393,7 +393,7 @@ export default function SettingsPage() {
               </div>
               <Switch
                 checked={settings.privacy.allowAnalytics}
-                onCheckedChange={(checked) =>
+                onCheckedChange={(checked: boolean) =>
                   setSettings({
                     ...settings,
                     privacy: { ...settings.privacy, allowAnalytics: checked },
